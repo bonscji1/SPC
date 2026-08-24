@@ -1,0 +1,12 @@
+# Frontend build outputs and dependencies
+# Uncomment or extend once the stack is chosen.
+
+# node_modules/
+# dist/
+# build/
+# .next/
+# .nuxt/
+# .output/
+# .turbo/
+# coverage/
+# *.tsbuildinfo

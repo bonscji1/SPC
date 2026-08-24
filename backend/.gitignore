@@ -1,0 +1,12 @@
+# Backend build outputs and dependencies
+# Uncomment or extend once the stack is chosen.
+
+# __pycache__/
+# *.py[cod]
+# .venv/
+# venv/
+# .pytest_cache/
+# .mypy_cache/
+# target/          # Rust
+# bin/
+# vendor/          # Go
