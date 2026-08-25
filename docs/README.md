@@ -10,8 +10,8 @@ Agents and contributors working in a single subproject should read this folder *
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| _Architecture overview_ | TBD | High-level system diagram and boundaries |
-| _Development setup_ | TBD | Prerequisites, env setup, running locally |
+| [Architecture overview](./architecture.md) | done | Monorepo layout, DTO/repository principles |
+| _Development setup_ | partial | See frontend `README.md` below |
 | _API contract_ | TBD | How frontend and backend communicate |
 | _Deployment_ | TBD | Environments, release process |
 

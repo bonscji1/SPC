@@ -33,13 +33,18 @@ SPC/
 - Prefer extending existing code over introducing parallel patterns.
 - Add or update documentation in `docs/` when behavior or architecture changes.
 - Save implementation plans for non-trivial work in `plans/` before starting.
+- **Frontend persistence:** never read/write storage directly from UI. Use a repository interface in `SPC.Core` with the implementation in `SPC.Web` (localStorage now, HTTP API later). UI and components depend only on the interface and DTOs.
+- **Verification:** agents run unit tests (`dotnet test` in the relevant subproject). Do not drive the browser or exercise the UI unless the user asks. The human evaluates user interactions.
 
 ## Documentation map
 
 | Topic | Location |
 |-------|----------|
+| Architecture (monorepo) | `docs/architecture.md` |
 | Project overview and cross-cutting concerns | `docs/README.md` |
-| Frontend conventions and architecture | `frontend/docs/README.md` |
+| Frontend architecture | `frontend/docs/architecture.md` |
+| Frontend UI / typography | `frontend/docs/ui.md` |
+| Frontend conventions | `frontend/docs/README.md` |
 | Backend conventions and architecture | `backend/docs/README.md` |
 | Implementation plans | `plans/` |
 

@@ -1,0 +1,525 @@
+@page "/profile/new"
+@page "/profile/{ProfileId:guid}"
+@using System.Globalization
+@using SPC.Core.Formatting
+@using SPC.Core.Models
+@using SPC.Core.Repositories
+@using SPC.Core.Services
+@using SPC.Core.Validation
+@inject IUserProfileRepository ProfileRepository
+@inject IEnergyCalculator Energy
+@inject ActiveProfileService ActiveProfiles
+@inject NavigationManager Navigation
+
+<PageTitle>@PageTitle — Smart Pig's Cookbook</PageTitle>
+
+<AppModal IsOpen="_showSaveModal"
+          Title="@_saveModalTitle"
+          Message="@_saveModalMessage"
+          IsError="@_saveModalIsError"
+          ConfirmText="OK"
+          OnConfirm="CloseSaveModal" />
+
+<AppModal IsOpen="_showDeleteModal"
+          Title="Delete this profile?"
+          Message="Recipes are not affected. This only removes the person estimate."
+          ConfirmText="Delete"
+          CancelText="Cancel"
+          ShowCancel="true"
+          OnConfirm="ConfirmDeleteAsync"
+          OnCancel="CancelDelete" />
+
+<div class="page-header">
+    <h1>@PageHeading</h1>
+    <p class="muted">Used to suggest a lunch calorie target while cooking. Not attached to recipes.</p>
+</div>
+
+@if (!string.IsNullOrEmpty(_loadError))
+{
+    <div class="validation-errors" role="alert">
+        <p class="validation-title">@_loadError</p>
+    </div>
+}
+else
+{
+    <div class="recipe-layout">
+        <section class="card editor-card">
+            <section class="editor-section">
+                <h2 class="section-title">General</h2>
+                <p class="section-hint muted">Who this estimate is for.</p>
+                <div class="field">
+                    <label for="profile-name">Name</label>
+                    <input id="profile-name"
+                           class="input input-lg"
+                           placeholder="e.g. Jan"
+                           value="@_profile.Name"
+                           @oninput="OnNameInput" />
+                </div>
+
+                <fieldset class="field">
+                    <legend>Sex</legend>
+                    <div class="radio-row">
+                        <label class="radio-option">
+                            <input type="radio" name="sex" checked="@(_profile.Sex == Sex.Male)" @onchange="() => SetSex(Sex.Male)" />
+                            Male
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="sex" checked="@(_profile.Sex == Sex.Female)" @onchange="() => SetSex(Sex.Female)" />
+                            Female
+                        </label>
+                    </div>
+                    <p class="field-hint muted">Used by the calorie formula (typical body composition), not identity.</p>
+                </fieldset>
+            </section>
+
+            <section class="editor-section">
+                <h2 class="section-title">Biological markers</h2>
+                <p class="section-hint muted">Inputs for the BMR estimate.</p>
+                <div class="portion-inputs">
+                    <div class="field">
+                        <label for="profile-age">Age (years)</label>
+                        <input id="profile-age"
+                               class="input"
+                               type="number"
+                               min="18"
+                               max="80"
+                               step="1"
+                               placeholder="30"
+                               value="@FormatInt(_profile.AgeYears)"
+                               @oninput="OnAgeInput" />
+                    </div>
+                    <div class="field">
+                        <label for="profile-weight">Weight (kg)</label>
+                        <input id="profile-weight"
+                               class="input"
+                               type="number"
+                               min="30"
+                               max="250"
+                               step="0.1"
+                               placeholder="75"
+                               value="@FormatOptionalDecimal(_profile.WeightKg == 0 ? null : _profile.WeightKg)"
+                               @oninput="OnWeightInput" />
+                    </div>
+                    <div class="field">
+                        <label for="profile-height">Height (cm)</label>
+                        <input id="profile-height"
+                               class="input"
+                               type="number"
+                               min="120"
+                               max="220"
+                               step="0.1"
+                               placeholder="175"
+                               value="@FormatOptionalDecimal(_profile.HeightCm == 0 ? null : _profile.HeightCm)"
+                               @oninput="OnHeightInput" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="editor-section">
+                <h2 class="section-title">Activity</h2>
+                <p class="section-hint muted">Physical activity level (PAL) multiplied by BMR for daily maintenance.</p>
+                <div class="field">
+                    <label for="profile-activity">Activity type</label>
+                    <select id="profile-activity"
+                            class="input"
+                            value="@_profile.ActivityLevel"
+                            @onchange="OnActivityChanged">
+                        <option value="@ActivityLevel.Sedentary">Sedentary [@FormatPal(EnergyCalculator.PalSedentary)] — desk, little exercise</option>
+                        <option value="@ActivityLevel.Light">Light [@FormatPal(EnergyCalculator.PalLight)] — walks, 1–3 easy sessions</option>
+                        <option value="@ActivityLevel.Moderate">Moderate [@FormatPal(EnergyCalculator.PalModerate)] — typical mixed week</option>
+                        <option value="@ActivityLevel.Active">Active [@FormatPal(EnergyCalculator.PalActive)] — physical job or hard training</option>
+                        <option value="@ActivityLevel.VeryActive">Very active [@FormatPal(EnergyCalculator.PalVeryActive)] — heavy labour / two-a-days</option>
+                        <option value="@ActivityLevel.Custom">Custom — enter your own index</option>
+                    </select>
+                </div>
+                @if (_profile.ActivityLevel == ActivityLevel.Custom)
+                {
+                    <div class="field">
+                        <label for="profile-custom-pal">Custom activity index</label>
+                        <input id="profile-custom-pal"
+                               class="input"
+                               type="number"
+                               min="@ProfileValidator.MinCustomPal"
+                               max="@ProfileValidator.MaxCustomPal"
+                               step="0.01"
+                               placeholder="e.g. 1.65"
+                               value="@FormatOptionalDecimal(_profile.CustomPal)"
+                               @oninput="OnCustomPalInput" />
+                    </div>
+                }
+            </section>
+
+            <section class="editor-section">
+                <h2 class="section-title">Meal split</h2>
+                <p class="section-hint muted">Share of daily calories. Must add up to 100%.</p>
+
+                <div class="portion-inputs">
+                    <div class="field">
+                        <label for="split-breakfast">Breakfast %</label>
+                        <input id="split-breakfast" class="input" type="number" min="0" max="100" step="1"
+                               value="@FormatBare(_profile.MealSplit.BreakfastPercent)"
+                               @oninput="e => OnSplitInput(MealType.Breakfast, e)" />
+                    </div>
+                    <div class="field">
+                        <label for="split-lunch">Lunch %</label>
+                        <input id="split-lunch" class="input" type="number" min="0" max="100" step="1"
+                               value="@FormatBare(_profile.MealSplit.LunchPercent)"
+                               @oninput="e => OnSplitInput(MealType.Lunch, e)" />
+                    </div>
+                    <div class="field">
+                        <label for="split-dinner">Dinner %</label>
+                        <input id="split-dinner" class="input" type="number" min="0" max="100" step="1"
+                               value="@FormatBare(_profile.MealSplit.DinnerPercent)"
+                               @oninput="e => OnSplitInput(MealType.Dinner, e)" />
+                    </div>
+                    <div class="field">
+                        <label for="split-snack">Snack %</label>
+                        <input id="split-snack" class="input" type="number" min="0" max="100" step="1"
+                               value="@FormatBare(_profile.MealSplit.SnackPercent)"
+                               @oninput="e => OnSplitInput(MealType.Snack, e)" />
+                    </div>
+                </div>
+                <p class="@(decimal.Abs(_profile.MealSplit.TotalPercent - 100m) > 0.05m ? "meal-split-total is-error" : "meal-split-total")">
+                    Total: @NumberFormat.Format(_profile.MealSplit.TotalPercent)%
+                </p>
+            </section>
+        </section>
+
+        <div class="summary-column">
+            <section class="card summary-card">
+                <h2>Estimate</h2>
+                @if (ValidationErrors.Count > 0)
+                {
+                    <div class="validation-errors" role="alert">
+                        <p class="validation-title">Fix these before saving:</p>
+                        <ul>
+                            @foreach (var error in ValidationErrors)
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+                }
+                else if (_energy is not null)
+                {
+                    <dl class="summary-meta">
+                        <div>
+                            <dt>
+                                <span>BMR</span>
+                                <InfoTip Text="@BmrTooltip" AriaLabel="About BMR" />
+                            </dt>
+                            <dd>@NumberFormat.WithUnit(_energy.BmrKcal, "kcal")</dd>
+                            <p class="muted field-hint">Typical error about ±10%. Not medical advice.</p>
+                        </div>
+                        <div>
+                            <dt>
+                                <span>Daily (maintenance)</span>
+                                <InfoTip Text="@DailyTooltip" AriaLabel="About daily maintenance" />
+                            </dt>
+                            <dd>@NumberFormat.WithUnit(_energy.TdeeKcal, "kcal")</dd>
+                        </div>
+                    </dl>
+                    <section class="summary-section">
+                        <h3>Meal split</h3>
+                        <dl class="summary-meta">
+                            <div>
+                                <dt>
+                                    <span>Breakfast</span>
+                                    <InfoTip Text="@MealTooltip("breakfast", _profile.MealSplit.BreakfastPercent)" AriaLabel="About breakfast calories" />
+                                </dt>
+                                <dd>@NumberFormat.WithUnit(_energy.BreakfastKcal, "kcal")</dd>
+                            </div>
+                            <div>
+                                <dt>
+                                    <span>Lunch</span>
+                                    <InfoTip Text="@MealTooltip("lunch", _profile.MealSplit.LunchPercent)" AriaLabel="About lunch calories" />
+                                </dt>
+                                <dd>@NumberFormat.WithUnit(_energy.LunchKcal, "kcal")</dd>
+                            </div>
+                            <div>
+                                <dt>
+                                    <span>Dinner</span>
+                                    <InfoTip Text="@MealTooltip("dinner", _profile.MealSplit.DinnerPercent)" AriaLabel="About dinner calories" />
+                                </dt>
+                                <dd>@NumberFormat.WithUnit(_energy.DinnerKcal, "kcal")</dd>
+                            </div>
+                            <div>
+                                <dt>
+                                    <span>Snack</span>
+                                    <InfoTip Text="@MealTooltip("snack", _profile.MealSplit.SnackPercent)" AriaLabel="About snack calories" />
+                                </dt>
+                                <dd>@NumberFormat.WithUnit(_energy.SnackKcal, "kcal")</dd>
+                            </div>
+                        </dl>
+                    </section>
+                }
+            </section>
+
+            <div class="save-panel">
+                <button type="button"
+                        class="btn btn-primary btn-block"
+                        disabled="@(!CanSave || _isSaving)"
+                        @onclick="SaveAsync">
+                    @(_isSaving ? "Saving…" : "Save profile")
+                </button>
+                @if (ProfileId.HasValue)
+                {
+                    <button type="button" class="btn btn-secondary btn-block" @onclick="AskDelete">
+                        Delete profile
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid? ProfileId { get; set; }
+
+    private UserProfileDto _profile = new();
+    private EnergyEstimateDto? _energy;
+    private string? _loadError;
+    private bool _isSaving;
+    private bool _showSaveModal;
+    private bool _saveModalIsError;
+    private string _saveModalTitle = string.Empty;
+    private string _saveModalMessage = string.Empty;
+    private bool _showDeleteModal;
+    private Guid? _loadedRouteId;
+    private bool _newInitialized;
+
+    private string PageHeading => ProfileId.HasValue ? "Edit profile" : "New profile";
+
+    private string PageTitle => string.IsNullOrWhiteSpace(_profile.Name) ? PageHeading : _profile.Name;
+
+    private IReadOnlyList<string> ValidationErrors => ProfileValidator.ValidateProfile(_profile);
+
+    private bool CanSave => ProfileValidator.IsProfileValid(_profile);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ProfileId is Guid id)
+        {
+            if (_loadedRouteId == id)
+            {
+                return;
+            }
+
+            _loadedRouteId = id;
+            _newInitialized = false;
+
+            var profile = await ProfileRepository.GetByIdAsync(id);
+            if (profile is null)
+            {
+                _loadError = "Profile not found.";
+                return;
+            }
+
+            _profile = profile.Clone();
+            _loadError = null;
+            RefreshEnergy();
+            return;
+        }
+
+        if (_newInitialized)
+        {
+            return;
+        }
+
+        _newInitialized = true;
+        _loadedRouteId = null;
+        _loadError = null;
+        _profile = new UserProfileDto();
+        RefreshEnergy();
+    }
+
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        _profile.Name = e.Value?.ToString() ?? string.Empty;
+        RefreshEnergy();
+    }
+
+    private void SetSex(Sex sex)
+    {
+        _profile.Sex = sex;
+        RefreshEnergy();
+    }
+
+    private void OnAgeInput(ChangeEventArgs e)
+    {
+        var parsed = ParseOptionalDecimal(e.Value);
+        _profile.AgeYears = parsed is decimal d ? (int)decimal.Truncate(d) : 0;
+        RefreshEnergy();
+    }
+
+    private void OnWeightInput(ChangeEventArgs e)
+    {
+        _profile.WeightKg = ParseOptionalDecimal(e.Value) ?? 0;
+        RefreshEnergy();
+    }
+
+    private void OnHeightInput(ChangeEventArgs e)
+    {
+        _profile.HeightCm = ParseOptionalDecimal(e.Value) ?? 0;
+        RefreshEnergy();
+    }
+
+    private void OnActivityChanged(ChangeEventArgs e)
+    {
+        if (!Enum.TryParse<ActivityLevel>(e.Value?.ToString(), out var level))
+        {
+            return;
+        }
+
+        var previous = _profile.ActivityLevel;
+        if (level == ActivityLevel.Custom && _profile.CustomPal is null && previous != ActivityLevel.Custom)
+        {
+            _profile.CustomPal = EnergyCalculator.PalFor(previous);
+        }
+
+        _profile.ActivityLevel = level;
+        RefreshEnergy();
+    }
+
+    private void OnCustomPalInput(ChangeEventArgs e)
+    {
+        _profile.CustomPal = ParseOptionalDecimal(e.Value);
+        RefreshEnergy();
+    }
+
+    private void OnSplitInput(MealType meal, ChangeEventArgs e)
+    {
+        var value = ParseOptionalDecimal(e.Value) ?? 0;
+        switch (meal)
+        {
+            case MealType.Breakfast:
+                _profile.MealSplit.BreakfastPercent = value;
+                break;
+            case MealType.Lunch:
+                _profile.MealSplit.LunchPercent = value;
+                break;
+            case MealType.Dinner:
+                _profile.MealSplit.DinnerPercent = value;
+                break;
+            case MealType.Snack:
+                _profile.MealSplit.SnackPercent = value;
+                break;
+        }
+
+        RefreshEnergy();
+    }
+
+    private void RefreshEnergy()
+    {
+        _energy = CanSave ? Energy.Estimate(_profile) : null;
+    }
+
+    private string BmrTooltip
+    {
+        get
+        {
+            var sexTerm = _profile.Sex == Sex.Female ? "− 161 (female)" : "+ 5 (male)";
+            return $"Calories at rest (Mifflin–St Jeor). Formula: 10 × weight [{NumberFormat.Format(_profile.WeightKg)}] + 6.25 × height [{NumberFormat.Format(_profile.HeightCm)}] − 5 × age [{_profile.AgeYears}] {sexTerm}. Shown rounded to 10 kcal.";
+        }
+    }
+
+    private string DailyTooltip =>
+        _energy is null
+            ? string.Empty
+            : $"Calories to maintain current weight. Formula: BMR [{NumberFormat.Format(_energy.BmrKcal)}] × activity index [{FormatPal(_energy.Pal)}]. Shown rounded to 10 kcal.";
+
+    private string MealTooltip(string mealName, decimal percent) =>
+        _energy is null
+            ? string.Empty
+            : $"Caloric value of {mealName} to maintain weight. Formula: maintenance [{NumberFormat.Format(_energy.TdeeKcal)}] × {mealName} meal split [{FormatPal(percent / 100m)}].";
+
+    private async Task SaveAsync()
+    {
+        if (!CanSave)
+        {
+            ShowSaveModal("Cannot save", "Fix validation errors before saving.", isError: true);
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            await ProfileRepository.SaveAsync(_profile);
+            await ActiveProfiles.SelectAsync(_profile.Id);
+            ShowSaveModal("Saved", "Profile saved. You can switch people from the top-right menu.", isError: false);
+
+            if (!ProfileId.HasValue)
+            {
+                Navigation.NavigateTo($"/profile/{_profile.Id}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowSaveModal("Save failed", ex.Message, isError: true);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void AskDelete() => _showDeleteModal = true;
+
+    private void CancelDelete() => _showDeleteModal = false;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        _showDeleteModal = false;
+        if (ProfileId is not Guid id)
+        {
+            return;
+        }
+
+        var wasActive = ActiveProfiles.Active?.Id == id;
+        await ProfileRepository.DeleteAsync(id);
+        if (wasActive)
+        {
+            await ActiveProfiles.SelectAsync(null);
+        }
+        else
+        {
+            await ActiveProfiles.RefreshAsync();
+        }
+
+        Navigation.NavigateTo("");
+    }
+
+    private void ShowSaveModal(string title, string message, bool isError)
+    {
+        _saveModalTitle = title;
+        _saveModalMessage = message;
+        _saveModalIsError = isError;
+        _showSaveModal = true;
+    }
+
+    private void CloseSaveModal() => _showSaveModal = false;
+
+    private static string FormatInt(int value) => value == 0 ? string.Empty : value.ToString(CultureInfo.InvariantCulture);
+
+    private static string FormatBare(decimal value) => NumberFormat.Format(value);
+
+    private static string FormatPal(decimal pal) =>
+        decimal.Round(pal, 2, MidpointRounding.AwayFromZero).ToString("0.0#", CultureInfo.InvariantCulture);
+
+    private static string FormatOptionalDecimal(decimal? value) =>
+        value is null ? string.Empty : NumberFormat.Format(value.Value);
+
+    private static decimal? ParseOptionalDecimal(object? value)
+    {
+        var text = value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : null;
+    }
+}

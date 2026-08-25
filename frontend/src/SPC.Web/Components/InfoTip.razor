@@ -1,0 +1,17 @@
+<span class="info-tip">
+    <button type="button"
+            class="info-tip-button"
+            aria-label="@AriaLabel"
+            aria-describedby="@_tipId">i</button>
+    <span id="@_tipId" role="tooltip" class="info-tip-text">@Text</span>
+</span>
+
+@code {
+    private readonly string _tipId = $"info-tip-{Guid.NewGuid():N}";
+
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+
+    [Parameter]
+    public string AriaLabel { get; set; } = "More information";
+}

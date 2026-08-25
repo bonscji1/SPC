@@ -1,0 +1,110 @@
+@using SPC.Core.Models
+@using SPC.Web.Services
+@implements IDisposable
+@inject ActiveProfileService Profiles
+@inject NavigationManager Navigation
+
+<nav class="nav-menu">
+    <div class="nav-start">
+        <a class="nav-brand" href="">SPC</a>
+        <ul class="nav-links">
+            <li>
+                <NavLink href="" Match="NavLinkMatch.All">Home</NavLink>
+            </li>
+            <li>
+                <NavLink href="recipe/new">New recipe</NavLink>
+            </li>
+        </ul>
+    </div>
+
+    <div class="nav-profile">
+        <button type="button"
+                class="btn btn-secondary nav-profile-button"
+                @onclick="ToggleMenu"
+                aria-expanded="@_menuOpen"
+                aria-haspopup="true">
+            @(Profiles.Active?.Name ?? "Profile")
+        </button>
+
+        @if (_menuOpen)
+        {
+            <div class="profile-menu-backdrop" @onclick="CloseMenu"></div>
+            <div class="profile-menu card" role="menu">
+                <button type="button"
+                        class="profile-menu-item @(_noneSelected ? "is-active" : null)"
+                        role="menuitem"
+                        @onclick="SelectNoneAsync">
+                    No profile
+                </button>
+
+                @foreach (var profile in Profiles.All)
+                {
+                    <div class="profile-menu-row">
+                        <button type="button"
+                                class="profile-menu-item @(profile.Id == Profiles.Active?.Id ? "is-active" : null)"
+                                role="menuitem"
+                                @onclick="() => SelectProfileAsync(profile.Id)">
+                            @profile.Name
+                        </button>
+                        <button type="button"
+                                class="profile-menu-edit"
+                                @onclick="() => EditProfile(profile.Id)">
+                            Edit
+                        </button>
+                    </div>
+                }
+
+                <button type="button"
+                        class="profile-menu-item profile-menu-add"
+                        role="menuitem"
+                        @onclick="AddProfile">
+                    + Add profile
+                </button>
+            </div>
+        }
+    </div>
+</nav>
+
+@code {
+    private bool _menuOpen;
+
+    private bool _noneSelected => Profiles.Active is null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Profiles.Changed += OnProfilesChanged;
+        await Profiles.InitializeAsync();
+    }
+
+    private void OnProfilesChanged() => InvokeAsync(StateHasChanged);
+
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+
+    private void CloseMenu() => _menuOpen = false;
+
+    private async Task SelectNoneAsync()
+    {
+        await Profiles.SelectAsync(null);
+        CloseMenu();
+    }
+
+    private async Task SelectProfileAsync(Guid id)
+    {
+        await Profiles.SelectAsync(id);
+        CloseMenu();
+    }
+
+    private void AddProfile()
+    {
+        CloseMenu();
+        Navigation.NavigateTo("profile/new");
+    }
+
+    private void EditProfile(Guid id)
+    {
+        CloseMenu();
+        Navigation.NavigateTo($"profile/{id}");
+    }
+
+    public void Dispose() => Profiles.Changed -= OnProfilesChanged;
+}

@@ -1,0 +1,143 @@
+@using System.Globalization
+@using SPC.Core.Formatting
+
+<div class="recipe-item-row">
+    <div class="field">
+        <label for="@NameInputId">@NameLabel</label>
+        <input id="@NameInputId"
+               class="input"
+               placeholder="@NamePlaceholder"
+               value="@Name"
+               @oninput="OnNameInput" />
+    </div>
+
+    <div class="field">
+        <label for="@GramsInputId">@GramsLabel</label>
+        <input id="@GramsInputId"
+               class="input"
+               type="number"
+               min="0"
+               step="0.1"
+               placeholder="@GramsPlaceholder"
+               value="@GramsValue"
+               @oninput="OnGramsInput" />
+    </div>
+
+    <div class="field">
+        <label for="@CaloriesInputId">@CaloriesLabel</label>
+        <input id="@CaloriesInputId"
+               class="input"
+               type="number"
+               min="0"
+               step="0.1"
+               placeholder="@CaloriesPlaceholder"
+               value="@CaloriesValue"
+               @oninput="OnCaloriesInput" />
+    </div>
+
+    <button type="button"
+            class="btn btn-icon"
+            title="@RemoveTitle"
+            disabled="@(!CanRemove)"
+            @onclick="OnRemove">
+        ✕
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid RowId { get; set; }
+
+    [Parameter]
+    public string Name { get; set; } = string.Empty;
+
+    [Parameter]
+    public decimal? Grams { get; set; }
+
+    [Parameter]
+    public decimal? CaloriesPer100g { get; set; }
+
+    [Parameter]
+    public string NameLabel { get; set; } = "Ingredient";
+
+    [Parameter]
+    public string NamePlaceholder { get; set; } = "e.g. carrot";
+
+    [Parameter]
+    public string GramsLabel { get; set; } = "Grams";
+
+    [Parameter]
+    public string GramsPlaceholder { get; set; } = "200";
+
+    [Parameter]
+    public string CaloriesLabel { get; set; } = "kcal / 100 g";
+
+    [Parameter]
+    public string CaloriesPlaceholder { get; set; } = "41";
+
+    [Parameter]
+    public string RemoveTitle { get; set; } = "Remove";
+
+    [Parameter]
+    public bool CanRemove { get; set; } = true;
+
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
+
+    [Parameter]
+    public EventCallback<RecipeItemRowChange> OnChanged { get; set; }
+
+    private string NameInputId => $"row-name-{RowId:N}";
+    private string GramsInputId => $"row-grams-{RowId:N}";
+    private string CaloriesInputId => $"row-calories-{RowId:N}";
+
+    private string GramsValue => FormatOptionalDecimal(Grams);
+
+    private string CaloriesValue => FormatOptionalDecimal(CaloriesPer100g);
+
+    private async Task OnNameInput(ChangeEventArgs e)
+    {
+        await OnChanged.InvokeAsync(new RecipeItemRowChange
+        {
+            Name = e.Value?.ToString() ?? string.Empty,
+            Grams = Grams,
+            CaloriesPer100g = CaloriesPer100g,
+        });
+    }
+
+    private async Task OnGramsInput(ChangeEventArgs e)
+    {
+        await OnChanged.InvokeAsync(new RecipeItemRowChange
+        {
+            Name = Name,
+            Grams = ParseOptionalDecimal(e.Value),
+            CaloriesPer100g = CaloriesPer100g,
+        });
+    }
+
+    private async Task OnCaloriesInput(ChangeEventArgs e)
+    {
+        await OnChanged.InvokeAsync(new RecipeItemRowChange
+        {
+            Name = Name,
+            Grams = Grams,
+            CaloriesPer100g = ParseOptionalDecimal(e.Value),
+        });
+    }
+
+    private static decimal? ParseOptionalDecimal(object? value)
+    {
+        var text = value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : null;
+    }
+
+    private static string FormatOptionalDecimal(decimal? value) =>
+        value is null or 0 ? string.Empty : NumberFormat.Format(value.Value);
+}

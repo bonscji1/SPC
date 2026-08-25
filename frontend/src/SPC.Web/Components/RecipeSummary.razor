@@ -1,0 +1,324 @@
+@using System.Globalization
+@using SPC.Core.Formatting
+@using SPC.Core.Models
+@using SPC.Core.Services
+@using SPC.Core.Validation
+@inject IPortionCalculator Portions
+
+<section class="card summary-card">
+    <h2>Summary</h2>
+
+    @if (LunchTargetKcal is decimal lunchKcal)
+    {
+        <div class="lunch-target">
+            <p class="lunch-target-line">
+                Lunch for <strong>@(string.IsNullOrWhiteSpace(ProfileName) ? "this profile" : ProfileName)</strong>:
+                <strong>@FormatCalories(lunchKcal)</strong>
+                @if (!string.IsNullOrEmpty(LunchTooltip))
+                {
+                    <InfoTip Text="@LunchTooltip" AriaLabel="About lunch calories" />
+                }
+            </p>
+            <p class="field-hint muted">Suggestion from the selected profile. Not stored on the recipe.</p>
+            <button type="button" class="btn btn-secondary" @onclick="OnUseLunchTarget">
+                Use as portion target
+            </button>
+        </div>
+    }
+    else
+    {
+        <p class="muted field-hint">Select a profile (top right) to see a lunch calorie target.</p>
+    }
+
+    @if (string.IsNullOrWhiteSpace(Recipe.Name) && Recipe.Ingredients.Count == 0 && !Recipe.Spices.Any(RecipeValidator.IsSpiceRowTouched))
+    {
+        <p class="muted">Enter a recipe name and ingredients to see a preview.</p>
+    }
+    else
+    {
+        <dl class="summary-meta">
+            <div>
+                <dt>Recipe</dt>
+                <dd>@(string.IsNullOrWhiteSpace(Recipe.Name) ? "—" : Recipe.Name)</dd>
+            </div>
+            <div>
+                <dt>Ingredients</dt>
+                <dd>@Recipe.Ingredients.Count</dd>
+            </div>
+            <div>
+                <dt>Spices</dt>
+                <dd>@Recipe.Spices.Count(s => RecipeValidator.IsSpiceRowTouched(s))</dd>
+            </div>
+        </dl>
+
+        @if (HasUnsavedChanges)
+        {
+            <p class="unsaved-hint">You have unsaved changes.</p>
+        }
+
+        @if (ValidationErrors.Count > 0)
+        {
+            <div class="validation-errors" role="alert">
+                <p class="validation-title">Fix these before using this recipe:</p>
+                <ul>
+                    @foreach (var error in ValidationErrors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (Result.HasTotals)
+        {
+            <section class="summary-section">
+                <h3>Theoretical values</h3>
+                <p class="section-hint muted">Batch calories stay the ingredient sum. Cooked weight only changes grams and density.</p>
+                <dl class="summary-meta">
+                    <div>
+                        <dt>
+                            <span>Weight</span>
+                            <InfoTip Text="@TheoreticalWeightTooltip" AriaLabel="About theoretical weight" />
+                        </dt>
+                        <dd>@FormatGrams(Result.TheoreticalWeightG)</dd>
+                    </div>
+                    <div>
+                        <dt>
+                            <span>Calories</span>
+                            <InfoTip Text="@TheoreticalCaloriesTooltip" AriaLabel="About theoretical calories" />
+                        </dt>
+                        <dd>@FormatCalories(Result.TheoreticalCalories)</dd>
+                    </div>
+                    <div>
+                        <dt>
+                            <span>kcal / 100 g</span>
+                            <InfoTip Text="@TheoreticalDensityTooltip" AriaLabel="About theoretical energy density" />
+                        </dt>
+                        <dd>@FormatCalories(Result.TheoreticalKcalPer100g)</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="summary-section">
+                <h3>Actual values</h3>
+                <div class="field">
+                    <label for="actual-weight">Actual cooked weight (g)</label>
+                    <input id="actual-weight"
+                           class="input"
+                           type="number"
+                           min="0"
+                           step="0.1"
+                           placeholder="@FormatBare(Result.TheoreticalWeightG)"
+                           value="@ActualWeightValue"
+                           @oninput="OnActualWeightInput" />
+                    <p class="field-hint muted">Optional, saved with the recipe. Weigh the finished dish if it cooked down or absorbed water. Calories stay the theoretical total.</p>
+                </div>
+                @if (Result.ActualDishWeightG is > 0)
+                {
+                    <dl class="summary-meta">
+                        <div>
+                            <dt>
+                                <span>kcal / 100 g cooked</span>
+                                <InfoTip Text="@CookedDensityTooltip" AriaLabel="About cooked energy density" />
+                            </dt>
+                            <dd>@FormatCalories(Result.KcalPer100gCooked)</dd>
+                        </div>
+                    </dl>
+                }
+            </section>
+
+            @if (Result.Errors.Count > 0)
+            {
+                <div class="validation-errors" role="alert">
+                    <ul>
+                        @foreach (var error in Result.Errors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <section class="summary-section">
+                <h3>Desired portions</h3>
+                <p class="section-hint muted">Fill one — number of portions, kcal, or grams. The other two follow.</p>
+
+                <div class="portion-inputs">
+                    <div class="field">
+                        <label for="kcal-per-portion">kcal per portion</label>
+                        <input id="kcal-per-portion"
+                               class="input"
+                               type="number"
+                               min="0"
+                               step="0.1"
+                               placeholder="e.g. 500"
+                               value="@KcalPerPortionValue"
+                               @oninput="OnKcalPerPortionInput" />
+                    </div>
+                    <div class="field">
+                        <label for="portion-count">Number of portions</label>
+                        <input id="portion-count"
+                               class="input"
+                               type="number"
+                               min="0"
+                               step="0.1"
+                               placeholder="e.g. 4"
+                               value="@PortionsValue"
+                               @oninput="OnPortionsInput" />
+                    </div>
+                    <div class="field">
+                        <label for="grams-per-portion">g per portion</label>
+                        <input id="grams-per-portion"
+                               class="input"
+                               type="number"
+                               min="0"
+                               step="0.1"
+                               placeholder="e.g. 250"
+                               value="@GramsPerPortionValue"
+                               @oninput="OnGramsPerPortionInput" />
+                    </div>
+                </div>
+            </section>
+
+            @if (Result.HasPortions)
+            {
+                <section class="summary-section">
+                    <h3>Servings</h3>
+                    @if (Result.FullPortions >= 1)
+                    {
+                        <p class="portion-readout">
+                            @Result.FullPortions full @(Result.FullPortions == 1 ? "portion" : "portions"),
+                            each @FormatGrams(Result.GramsPerPortion) and @FormatCalories(Result.KcalPerPortion).
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="portion-readout">No full portions at this size.</p>
+                    }
+
+                    @if (Result.LeftoverGrams > 0.005m || Result.LeftoverCalories > 0.05m)
+                    {
+                        <p class="portion-leftover">
+                            Then there is @FormatGrams(Result.LeftoverGrams)
+                            (@FormatCalories(Result.LeftoverCalories)) leftover.
+                        </p>
+                    }
+                </section>
+            }
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public RecipeDto Recipe { get; set; } = null!;
+
+    [Parameter]
+    public bool HasUnsavedChanges { get; set; }
+
+    [Parameter]
+    public PortionTargetKind TargetKind { get; set; } = PortionTargetKind.CaloriesPerPortion;
+
+    [Parameter]
+    public decimal? TargetValue { get; set; }
+
+    [Parameter]
+    public string? ProfileName { get; set; }
+
+    [Parameter]
+    public decimal? LunchTargetKcal { get; set; }
+
+    [Parameter]
+    public string? LunchTooltip { get; set; }
+
+    [Parameter]
+    public EventCallback OnUseLunchTarget { get; set; }
+
+    [Parameter]
+    public EventCallback<decimal?> OnActualDishWeightGChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<decimal?> OnCaloriesPerPortionChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<decimal?> OnPortionsChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<decimal?> OnGramsPerPortionChanged { get; set; }
+
+    private PortionResultDto Result =>
+        Portions.Calculate(Recipe, TargetKind, TargetValue, Recipe.ActualDishWeightG);
+
+    private IReadOnlyList<string> ValidationErrors =>
+        Recipe.Ingredients.Count == 0 && string.IsNullOrWhiteSpace(Recipe.Name)
+            ? []
+            : RecipeValidator.ValidateRecipe(Recipe);
+
+    private string ActualWeightValue => FormatOptionalDecimal(Recipe.ActualDishWeightG);
+
+    private string KcalPerPortionValue =>
+        TargetKind == PortionTargetKind.CaloriesPerPortion
+            ? FormatOptionalDecimal(TargetValue)
+            : Result.HasPortions
+                ? FormatBare(Result.KcalPerPortion)
+                : string.Empty;
+
+    private string PortionsValue =>
+        TargetKind == PortionTargetKind.Portions
+            ? FormatOptionalDecimal(TargetValue)
+            : Result.HasPortions
+                ? FormatBare(Result.Portions)
+                : string.Empty;
+
+    private string GramsPerPortionValue =>
+        TargetKind == PortionTargetKind.GramsPerPortion
+            ? FormatOptionalDecimal(TargetValue)
+            : Result.HasPortions
+                ? FormatBare(Result.GramsPerPortion)
+                : string.Empty;
+
+    private string TheoreticalWeightTooltip =>
+        $"Total grams of ingredients and spices. Formula: sum of ingredient grams + spice grams. Shown as [{FormatBare(Result.TheoreticalWeightG)}].";
+
+    private string TheoreticalCaloriesTooltip =>
+        $"Theoretical batch energy. Formula: sum of (grams / 100 × kcal per 100 g). Cooked weight does not change this. Shown as [{FormatBare(Result.TheoreticalCalories)}].";
+
+    private string TheoreticalDensityTooltip =>
+        $"Energy per 100 g of the theoretical batch. Formula: calories [{FormatBare(Result.TheoreticalCalories)}] / weight [{FormatBare(Result.TheoreticalWeightG)}] × 100.";
+
+    private string CookedDensityTooltip =>
+        $"Energy per 100 g of the finished dish. Formula: calories [{FormatBare(Result.TheoreticalCalories)}] / cooked weight [{FormatBare(Result.ActualDishWeightG ?? Result.TheoreticalWeightG)}] × 100.";
+
+    private Task OnActualWeightInput(ChangeEventArgs e) =>
+        OnActualDishWeightGChanged.InvokeAsync(ParseOptionalDecimal(e.Value));
+
+    private Task OnKcalPerPortionInput(ChangeEventArgs e) =>
+        OnCaloriesPerPortionChanged.InvokeAsync(ParseOptionalDecimal(e.Value));
+
+    private Task OnPortionsInput(ChangeEventArgs e) =>
+        OnPortionsChanged.InvokeAsync(ParseOptionalDecimal(e.Value));
+
+    private Task OnGramsPerPortionInput(ChangeEventArgs e) =>
+        OnGramsPerPortionChanged.InvokeAsync(ParseOptionalDecimal(e.Value));
+
+    private static string FormatGrams(decimal grams) => NumberFormat.WithUnit(grams, "g");
+
+    private static string FormatCalories(decimal calories) => NumberFormat.WithUnit(calories, "kcal");
+
+    private static string FormatBare(decimal value) => NumberFormat.Format(value);
+
+    private static string FormatOptionalDecimal(decimal? value) => NumberFormat.Format(value);
+
+    private static decimal? ParseOptionalDecimal(object? value)
+    {
+        var text = value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : null;
+    }
+}

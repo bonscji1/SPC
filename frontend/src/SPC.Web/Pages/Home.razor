@@ -1,0 +1,64 @@
+@page "/"
+@using SPC.Core.Models
+@using SPC.Core.Repositories
+@using SPC.Core.Validation
+@inject IRecipeRepository RecipeRepository
+
+<PageTitle>Smart Pig's Cookbook</PageTitle>
+
+<section class="hero">
+    <h1>Smart Pig's Cookbook</h1>
+    <p class="tagline">
+        Cook what you love. Know your portions. Skip the tedious calorie math.
+    </p>
+    <a class="btn btn-primary" href="recipe/new">Create a recipe</a>
+</section>
+
+<section class="card saved-recipes-card">
+    <h2 class="section-title">Saved recipes</h2>
+    <p class="section-hint muted">Open a recipe to keep editing.</p>
+
+    @if (_isLoading)
+    {
+        <p class="muted">Loading…</p>
+    }
+    else if (_recipes.Count == 0)
+    {
+        <p class="muted">No saved recipes yet. Create one and hit <strong>Save recipe</strong>.</p>
+    }
+    else
+    {
+        <ul class="saved-recipe-list">
+            @foreach (var recipe in _recipes)
+            {
+                <li>
+                    <a class="saved-recipe-link" href="@($"recipe/{recipe.Id}")">
+                        <span class="saved-recipe-name">@recipe.Name</span>
+                        <span class="saved-recipe-meta">
+                            @recipe.Ingredients.Count ingredients
+                            @if (recipe.Spices.Any(RecipeValidator.IsSpiceRowTouched))
+                            {
+                                <text> · @recipe.Spices.Count(RecipeValidator.IsSpiceRowTouched) spices</text>
+                            }
+                            @if (recipe.UpdatedAt is not null)
+                            {
+                                <text> · @recipe.UpdatedAt.Value.ToLocalTime().ToString("g")</text>
+                            }
+                        </span>
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<RecipeDto> _recipes = [];
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _recipes = await RecipeRepository.GetAllAsync();
+        _isLoading = false;
+    }
+}

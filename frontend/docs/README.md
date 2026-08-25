@@ -4,17 +4,37 @@ Documentation for the SPC frontend subproject.
 
 Also read `../../docs/README.md` for cross-cutting concerns.
 
-## Contents
+## Stack
 
-<!-- Add documents as the frontend is built. Suggested topics: -->
+| Piece | Path | Notes |
+|-------|------|-------|
+| Blazor WASM app | `src/SPC.Web/` | UI, routing, layout |
+| Core library | `src/SPC.Core/` | DTOs, services, repository interfaces |
+| Tests | `src/SPC.Core.Tests/` | xUnit; Core logic (portions, energy targets) |
+
+## Local development
+
+```bash
+cd frontend
+dotnet restore SPC.sln
+dotnet watch run --project src/SPC.Web/SPC.Web.csproj
+```
+
+Open http://localhost:5180
+
+## Contents
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| _Stack and tooling_ | TBD | Framework, package manager, build tool |
-| _Project structure_ | TBD | Directory layout and module boundaries |
-| _Components and UI_ | TBD | Design system, styling, accessibility |
-| _State and data fetching_ | TBD | Client state, API client, caching |
-| _Testing_ | TBD | Unit, integration, and E2E approach |
+| [Architecture](./architecture.md) | done | Projects, state, UI patterns and product preferences |
+| [UI and typography](./ui.md) | done | Font, type scale, InfoTip, layout classes |
+| [Portion and calorie model](./portion-math.md) | done | Ingredient-sum + yield; pairing grams with pack kcal/100 g |
+| [Energy targets](./energy-targets.md) | done | Mifflin–St Jeor, PAL, meal split; profiles independent of recipes |
+| _Stack and tooling_ | done | Blazor WASM, .NET 10, SPC.Core |
+| _Project structure_ | done | See architecture doc |
+| _Components and UI_ | done | See [ui.md](./ui.md) and architecture product preferences |
+| _State and data fetching_ | partial | RecipeDraftService; recipe + profile repos (localStorage) |
+| _Testing_ | partial | Core unit tests including portion math and energy targets |
 
 ## Agent instructions
 
