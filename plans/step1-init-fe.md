@@ -1,8 +1,9 @@
 # Plan: Step 1 — Init frontend
 
 **Date:** 2026-08-24  
+**Updated:** 2026-08-26  
 **Scope:** frontend  
-**Status:** draft  
+**Status:** implemented — Blazor WASM on .NET 10 (`SPC.Web` + `SPC.Core`)  
 **Depends on:** —  
 **Parent:** [thePlan.md](./thePlan.md)
 

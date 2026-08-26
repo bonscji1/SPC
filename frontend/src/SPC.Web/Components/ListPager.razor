@@ -1,0 +1,69 @@
+@using SPC.Core.Models
+
+<div class="list-pager">
+    <div class="field list-pager-size">
+        <label for="@SizeId">Per page</label>
+        <select id="@SizeId"
+                class="input"
+                value="@PageSize"
+                @onchange="OnPageSizeChanged">
+            @foreach (var size in Paging.PageSizes)
+            {
+                <option value="@size">@size</option>
+            }
+        </select>
+    </div>
+    <p class="list-pager-status muted">Page @Page of @TotalPages</p>
+    <div class="list-pager-nav">
+        <button type="button"
+                class="btn btn-secondary"
+                disabled="@(!HasPrevious)"
+                @onclick="Previous">
+            Previous
+        </button>
+        <button type="button"
+                class="btn btn-secondary"
+                disabled="@(!HasNext)"
+                @onclick="Next">
+            Next
+        </button>
+    </div>
+</div>
+
+@code {
+    private readonly string SizeId = $"page-size-{Guid.NewGuid():N}";
+
+    [Parameter]
+    public int Page { get; set; } = 1;
+
+    [Parameter]
+    public int TotalPages { get; set; } = 1;
+
+    [Parameter]
+    public int PageSize { get; set; } = Paging.DefaultPageSize;
+
+    [Parameter]
+    public bool HasPrevious { get; set; }
+
+    [Parameter]
+    public bool HasNext { get; set; }
+
+    [Parameter]
+    public EventCallback<int> PageSizeChanged { get; set; }
+
+    [Parameter]
+    public EventCallback Previous { get; set; }
+
+    [Parameter]
+    public EventCallback Next { get; set; }
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var size))
+        {
+            return;
+        }
+
+        await PageSizeChanged.InvokeAsync(Paging.NormalizePageSize(size));
+    }
+}

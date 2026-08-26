@@ -4,7 +4,7 @@ High-level structure of the Smart Pig's Cookbook monorepo.
 
 ## Overview
 
-SPC is a **monorepo** with a frontend app today and a backend added when persistence or APIs are needed (step 5+).
+SPC is a **monorepo** with a frontend app today and a backend added when localStorage is no longer enough (multi-device, sharing, or a canonical ingredient library). See `plans/step5-save-recipes-and-ingredients.md`.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -58,12 +58,12 @@ If the backend is **Go**, DTOs in Core become the API contract; generate or hand
 ```
 User input → Blazor components → RecipeDraftService (in-memory)
                                       ↓
-                               RecipeDto / IngredientDto
+                               RecipeDto / RecipeIngredientDto
                                       ↓
                                RecipeValidator + PortionCalculator (SPC.Core)
 ```
 
-Persistence (step 5): `RecipeDraftService` → `IRecipeRepository` → local storage or API.
+Persistence (step 5 prototype): `RecipeDraftService` → `IRecipeRepository` → localStorage. Nutrition library: `IIngredientRepository` → `spc.ingredients.v1`. List UI uses `GetPageAsync` (10/25/50). Real app: swap in `Api*Repository` → HTTP + PostgreSQL; same DTOs. `IngredientDto` is the nutrition library (not a recipe line).
 
 ## Documentation map
 
@@ -72,6 +72,7 @@ Persistence (step 5): `RecipeDraftService` → `IRecipeRepository` → local sto
 | Monorepo architecture | `docs/architecture.md` (this file) |
 | Frontend architecture | `frontend/docs/architecture.md` |
 | Frontend UI / typography | `frontend/docs/ui.md` |
+| Recipe instructions | `frontend/docs/recipe-instructions.md` |
 | Portion / calorie model | `frontend/docs/portion-math.md` |
 | Energy targets (BMR / TDEE) | `frontend/docs/energy-targets.md` |
 | Agent rules (shared) | `AGENTS.md` |

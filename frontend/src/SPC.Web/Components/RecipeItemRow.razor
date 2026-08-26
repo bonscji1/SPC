@@ -1,14 +1,49 @@
 @using System.Globalization
 @using SPC.Core.Formatting
+@using SPC.Core.Models
+@using SPC.Core.Repositories
+@inject IIngredientRepository Ingredients
 
 <div class="recipe-item-row">
-    <div class="field">
+    <div class="field name-combobox">
         <label for="@NameInputId">@NameLabel</label>
         <input id="@NameInputId"
                class="input"
                placeholder="@NamePlaceholder"
                value="@Name"
-               @oninput="OnNameInput" />
+               autocomplete="off"
+               role="combobox"
+               aria-expanded="@(_pickerOpen ? "true" : "false")"
+               aria-autocomplete="list"
+               aria-controls="@PickerId"
+               aria-activedescendant="@ActiveOptionId"
+               @oninput="OnNameInput"
+               @onkeydown="OnNameKeyDown"
+               @onblur="ClosePicker" />
+        @if (_pickerOpen && _suggestions.Count > 0)
+        {
+            <div class="instruction-picker" id="@PickerId" role="listbox">
+                <ul class="instruction-picker-list">
+                    @for (var i = 0; i < _suggestions.Count; i++)
+                    {
+                        var index = i;
+                        var item = _suggestions[i];
+                        <li>
+                            <button type="button"
+                                    id="@OptionId(index)"
+                                    class="instruction-picker-item @(index == _selectedIndex ? "is-active" : null)"
+                                    role="option"
+                                    aria-selected="@(index == _selectedIndex)"
+                                    @onmousedown:preventDefault
+                                    @onclick="() => PickAsync(item)">
+                                <span>@item.Name</span>
+                                <span class="editor-picker-meta">@NumberFormat.WithUnit(item.CaloriesPer100g, "kcal / 100 g")</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
 
     <div class="field">
@@ -39,12 +74,27 @@
             class="btn btn-icon"
             title="@RemoveTitle"
             disabled="@(!CanRemove)"
-            @onclick="OnRemove">
+            @onclick="AskRemoveAsync">
         ✕
     </button>
 </div>
 
+<AppModal IsOpen="_confirmOpen"
+          Title="@RemoveConfirmTitle"
+          Message="@RemoveConfirmMessage"
+          ConfirmText="Remove"
+          CancelText="Keep"
+          ShowCancel="true"
+          OnConfirm="ConfirmRemoveAsync"
+          OnCancel="CancelRemove" />
+
 @code {
+    private bool _confirmOpen;
+    private bool _pickerOpen;
+    private int _selectedIndex;
+    private int _searchSerial;
+    private IReadOnlyList<IngredientDto> _suggestions = [];
+
     [Parameter, EditorRequired]
     public Guid RowId { get; set; }
 
@@ -79,7 +129,16 @@
     public string RemoveTitle { get; set; } = "Remove";
 
     [Parameter]
+    public string RemoveConfirmTitle { get; set; } = "Remove this ingredient?";
+
+    [Parameter]
+    public string RemoveConfirmMessage { get; set; } = "This ingredient has data. Remove it?";
+
+    [Parameter]
     public bool CanRemove { get; set; } = true;
+
+    [Parameter]
+    public IReadOnlyList<string> OccupiedNames { get; set; } = [];
 
     [Parameter]
     public EventCallback OnRemove { get; set; }
@@ -87,22 +146,130 @@
     [Parameter]
     public EventCallback<RecipeItemRowChange> OnChanged { get; set; }
 
+    private bool HasContent =>
+        !string.IsNullOrWhiteSpace(Name) || Grams.HasValue || CaloriesPer100g.HasValue;
+
     private string NameInputId => $"row-name-{RowId:N}";
     private string GramsInputId => $"row-grams-{RowId:N}";
     private string CaloriesInputId => $"row-calories-{RowId:N}";
+    private string PickerId => $"row-picker-{RowId:N}";
+
+    private string? ActiveOptionId =>
+        _pickerOpen && _suggestions.Count > 0 ? OptionId(_selectedIndex) : null;
+
+    private string OptionId(int index) => $"row-option-{RowId:N}-{index}";
 
     private string GramsValue => FormatOptionalDecimal(Grams);
 
     private string CaloriesValue => FormatOptionalDecimal(CaloriesPer100g);
 
+    private async Task AskRemoveAsync()
+    {
+        if (!HasContent)
+        {
+            await OnRemove.InvokeAsync();
+            return;
+        }
+
+        _confirmOpen = true;
+    }
+
+    private async Task ConfirmRemoveAsync()
+    {
+        _confirmOpen = false;
+        await OnRemove.InvokeAsync();
+    }
+
+    private void CancelRemove() => _confirmOpen = false;
+
     private async Task OnNameInput(ChangeEventArgs e)
     {
+        var text = e.Value?.ToString() ?? string.Empty;
         await OnChanged.InvokeAsync(new RecipeItemRowChange
         {
-            Name = e.Value?.ToString() ?? string.Empty,
+            Name = text,
             Grams = Grams,
             CaloriesPer100g = CaloriesPer100g,
         });
+        await RefreshSuggestionsAsync(text, ++_searchSerial);
+    }
+
+    private async Task OnNameKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            ClosePicker();
+            return;
+        }
+
+        if (e.Key == "Tab")
+        {
+            ClosePicker();
+            return;
+        }
+
+        if (!_pickerOpen || _suggestions.Count == 0)
+        {
+            return;
+        }
+
+        if (e.Key == "ArrowDown")
+        {
+            _selectedIndex = Math.Min(_selectedIndex + 1, _suggestions.Count - 1);
+            return;
+        }
+
+        if (e.Key == "ArrowUp")
+        {
+            _selectedIndex = Math.Max(_selectedIndex - 1, 0);
+            return;
+        }
+
+        if (e.Key is "Enter")
+        {
+            await PickAsync(_suggestions[_selectedIndex]);
+        }
+    }
+
+    private async Task RefreshSuggestionsAsync(string text, int serial)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            if (serial == _searchSerial)
+            {
+                ClosePicker();
+            }
+
+            return;
+        }
+
+        var results = await Ingredients.SearchAsync(text, OccupiedNames);
+        if (serial != _searchSerial)
+        {
+            return;
+        }
+
+        _suggestions = results;
+        _selectedIndex = 0;
+        _pickerOpen = results.Count > 0;
+    }
+
+    private async Task PickAsync(IngredientDto item)
+    {
+        ClosePicker();
+        await OnChanged.InvokeAsync(new RecipeItemRowChange
+        {
+            Name = item.Name,
+            Grams = Grams,
+            CaloriesPer100g = item.CaloriesPer100g,
+        });
+    }
+
+    private void ClosePicker()
+    {
+        _pickerOpen = false;
+        _suggestions = [];
+        _selectedIndex = 0;
     }
 
     private async Task OnGramsInput(ChangeEventArgs e)

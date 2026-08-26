@@ -33,7 +33,7 @@ public static class RecipeValidator
         return errors;
     }
 
-    public static IReadOnlyList<string> ValidateIngredient(IngredientDto ingredient)
+    public static IReadOnlyList<string> ValidateIngredient(RecipeIngredientDto ingredient)
     {
         ArgumentNullException.ThrowIfNull(ingredient);
 
@@ -102,7 +102,7 @@ public static class RecipeValidator
         return ingredientGrams + spiceGrams;
     }
 
-    public static decimal GetIngredientCalories(IngredientDto ingredient)
+    public static decimal GetIngredientCalories(RecipeIngredientDto ingredient)
     {
         ArgumentNullException.ThrowIfNull(ingredient);
         return ingredient.Grams / 100m * ingredient.CaloriesPer100g;

@@ -1,0 +1,137 @@
+@using SPC.Core.Models
+@using SPC.Core.Services
+@inject IJSRuntime Js
+@implements IAsyncDisposable
+
+<div class="instruction-step">
+    <span class="instruction-step-num">@StepNumber</span>
+
+    <div class="instruction-step-main">
+        <div class="editor-toolbar" @ref="_toolbar">
+            <button type="button" class="btn btn-secondary editor-toolbar-btn" data-cmd="bold" title="Bold"><strong>B</strong></button>
+            <button type="button" class="btn btn-secondary editor-toolbar-btn" data-cmd="italic" title="Italic"><em>I</em></button>
+            <button type="button" class="btn btn-secondary editor-toolbar-btn" data-cmd="bulletList" title="Bullet list">• List</button>
+        </div>
+
+        <div @ref="_host" class="rich-editor-host"></div>
+    </div>
+
+    <button type="button"
+            class="btn btn-icon"
+            title="Remove step"
+            @onclick="AskRemoveAsync">
+        ✕
+    </button>
+</div>
+
+<AppModal IsOpen="_confirmOpen"
+          Title="Remove this step?"
+          Message="This step has text or linked ingredients. Remove it?"
+          ConfirmText="Remove"
+          CancelText="Keep"
+          ShowCancel="true"
+          OnConfirm="ConfirmRemoveAsync"
+          OnCancel="CancelRemove" />
+
+@code {
+    private ElementReference _host;
+    private ElementReference _toolbar;
+    private string? _editorId;
+    private DotNetObjectReference<InstructionStepEditor>? _dotnetRef;
+    private bool _initialized;
+    private string _mentionSignature = string.Empty;
+
+    [Parameter, EditorRequired]
+    public InstructionStepDto Step { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public RecipeDto Recipe { get; set; } = null!;
+
+    [Parameter]
+    public int StepNumber { get; set; } = 1;
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
+
+    private bool _confirmOpen;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await Js.InvokeVoidAsync("spc.loadInstructionEditor");
+
+        if (!_initialized)
+        {
+            _dotnetRef = DotNetObjectReference.Create(this);
+            var content = InstructionEditor.SerializeStepToTiptap(Step, Recipe);
+            var mentions = InstructionEditor.MentionItemsForRecipe(Recipe);
+            _mentionSignature = MentionSignature(Recipe);
+            _editorId = await Js.InvokeAsync<string>(
+                "spcInstructionEditor.init",
+                _host,
+                _toolbar,
+                content,
+                mentions,
+                _dotnetRef);
+            _initialized = true;
+            return;
+        }
+
+        if (_editorId is null)
+        {
+            return;
+        }
+
+        var currentMentions = InstructionEditor.MentionItemsForRecipe(Recipe);
+        var signature = MentionSignature(Recipe);
+        if (signature != _mentionSignature)
+        {
+            _mentionSignature = signature;
+            await Js.InvokeVoidAsync("spcInstructionEditor.updateMentions", _editorId, currentMentions);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnEditorChange(string json)
+    {
+        InstructionEditor.ApplyTiptapJson(Step, json);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task AskRemoveAsync()
+    {
+        if (!InstructionEditor.StepHasContent(Step))
+        {
+            await OnRemove.InvokeAsync();
+            return;
+        }
+
+        _confirmOpen = true;
+    }
+
+    private async Task ConfirmRemoveAsync()
+    {
+        _confirmOpen = false;
+        await OnRemove.InvokeAsync();
+    }
+
+    private void CancelRemove() => _confirmOpen = false;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_editorId is not null)
+        {
+            await Js.InvokeVoidAsync("spcInstructionEditor.destroy", _editorId);
+        }
+
+        _dotnetRef?.Dispose();
+    }
+
+    private static string MentionSignature(RecipeDto recipe) =>
+        string.Join(
+            '|',
+            recipe.Ingredients.Select(i => $"{i.Id}:{i.Name}:{i.Grams}")
+                .Concat(recipe.Spices.Select(s => $"{s.Id}:{s.Name}:{s.Grams}")));
+}

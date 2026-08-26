@@ -1,0 +1,317 @@
+@page "/library"
+@using System.Globalization
+@using SPC.Core.Formatting
+@using SPC.Core.Models
+@using SPC.Core.Repositories
+@using SPC.Core.Services
+@using SPC.Core.Validation
+@inject IIngredientRepository Ingredients
+
+<PageTitle>Ingredient library — Smart Pig's Cookbook</PageTitle>
+
+<AppModal IsOpen="_showDeleteModal"
+          Title="Delete this ingredient?"
+          Message="@_deleteMessage"
+          ConfirmText="Delete"
+          CancelText="Cancel"
+          ShowCancel="true"
+          OnConfirm="ConfirmDeleteAsync"
+          OnCancel="CancelDelete" />
+
+<AppModal IsOpen="_showEditor"
+          Title="@(_editingId is null ? "Add ingredient" : "Edit ingredient")"
+          ConfirmText="@(_isSaving ? "Saving…" : "Save")"
+          CancelText="Cancel"
+          ShowCancel="true"
+          ConfirmDisabled="_isSaving"
+          OnConfirm="SaveAsync"
+          OnCancel="CancelEdit">
+    <div class="field">
+        <label for="library-name">Name</label>
+        <input id="library-name"
+               class="input"
+               placeholder="e.g. onion"
+               value="@_draft.Name"
+               @oninput="OnNameInput" />
+    </div>
+    <div class="field">
+        <label for="library-kcal">kcal / 100 g</label>
+        <input id="library-kcal"
+               class="input"
+               type="number"
+               min="0"
+               step="0.1"
+               placeholder="e.g. 40"
+               value="@CaloriesValue"
+               @oninput="OnCaloriesInput" />
+    </div>
+
+    @if (_formErrors.Count > 0)
+    {
+        <div class="validation-errors" role="alert">
+            <ul>
+                @foreach (var error in _formErrors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+</AppModal>
+
+<div class="page-header">
+    <h1>Ingredient library</h1>
+    <p class="muted">Name and kcal per 100 g for reuse in recipes. Changing a food here does not rewrite saved recipes.</p>
+    <button type="button" class="btn btn-primary" @onclick="OpenAdd">Add ingredient</button>
+</div>
+
+<div class="page-stack">
+    <section class="card page-stack-fill">
+        <h2 class="section-title">Saved ingredients</h2>
+
+        @if (_isLoading)
+        {
+            <p class="muted">Loading…</p>
+        }
+        else
+        {
+            @if (ShowToolbar)
+            {
+                <div class="list-filters">
+                    <div class="field saved-recipe-filter">
+                        <label for="library-name-filter">Name</label>
+                        <input id="library-name-filter"
+                               class="input"
+                               placeholder="Filter by name"
+                               value="@_nameQuery"
+                               @oninput="OnNameFilterChanged" />
+                    </div>
+                </div>
+            }
+
+            @if (_page.TotalCount == 0)
+            {
+                @if (!string.IsNullOrWhiteSpace(_nameQuery))
+                {
+                    <p class="muted">No ingredients match that name.</p>
+                }
+                else
+                {
+                    <p class="muted">No ingredients yet. Add one here or save a recipe with kcal filled in.</p>
+                }
+            }
+            else
+            {
+                <ul class="saved-recipe-list">
+                    @foreach (var item in _page.Items)
+                    {
+                        <li class="saved-recipe-row">
+                            <div class="saved-recipe-link">
+                                <span class="saved-recipe-name">@item.Name</span>
+                                <span class="saved-recipe-meta">@NumberFormat.WithUnit(item.CaloriesPer100g, "kcal / 100 g")</span>
+                            </div>
+                            <div class="list-row-actions">
+                                <button type="button" class="btn btn-secondary" @onclick="() => BeginEdit(item)">
+                                    Edit
+                                </button>
+                                <button type="button" class="btn btn-secondary" @onclick="() => AskDelete(item)">
+                                    Delete
+                                </button>
+                            </div>
+                        </li>
+                    }
+                </ul>
+
+                <ListPager Page="_page.Page"
+                           TotalPages="_page.TotalPages"
+                           PageSize="_pageSize"
+                           HasPrevious="_page.HasPrevious"
+                           HasNext="_page.HasNext"
+                           PageSizeChanged="OnPageSizeChanged"
+                           Previous="PreviousPageAsync"
+                           Next="NextPageAsync" />
+            }
+        }
+    </section>
+</div>
+
+@code {
+    private PagedResult<IngredientDto> _page = Paging.Slice(Array.Empty<IngredientDto>(), 1, Paging.DefaultPageSize);
+    private int _pageSize = Paging.DefaultPageSize;
+    private int _requestedPage = 1;
+    private string _nameQuery = string.Empty;
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private bool _showDeleteModal;
+    private bool _showEditor;
+    private Guid? _pendingDeleteId;
+    private Guid? _editingId;
+    private string _deleteMessage = string.Empty;
+    private IngredientDto _draft = new();
+    private IReadOnlyList<string> _formErrors = [];
+
+    private bool ShowToolbar => _page.TotalCount > 0 || !string.IsNullOrWhiteSpace(_nameQuery);
+
+    private string CaloriesValue =>
+        _draft.CaloriesPer100g <= 0 ? string.Empty : NumberFormat.Format(_draft.CaloriesPer100g);
+
+    protected override async Task OnInitializedAsync() => await LoadPageAsync();
+
+    private async Task LoadPageAsync()
+    {
+        _page = await Ingredients.GetPageAsync(_requestedPage, _pageSize, string.IsNullOrWhiteSpace(_nameQuery) ? null : _nameQuery);
+        _requestedPage = _page.Page;
+        _isLoading = false;
+    }
+
+    private async Task OnNameFilterChanged(ChangeEventArgs e)
+    {
+        _nameQuery = e.Value?.ToString() ?? string.Empty;
+        _requestedPage = 1;
+        await LoadPageAsync();
+    }
+
+    private async Task OnPageSizeChanged(int size)
+    {
+        _pageSize = size;
+        _requestedPage = 1;
+        await LoadPageAsync();
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        _requestedPage = _page.Page - 1;
+        await LoadPageAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        _requestedPage = _page.Page + 1;
+        await LoadPageAsync();
+    }
+
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        _draft.Name = e.Value?.ToString() ?? string.Empty;
+        _formErrors = [];
+    }
+
+    private void OnCaloriesInput(ChangeEventArgs e)
+    {
+        var parsed = ParseOptionalDecimal(e.Value);
+        _draft.CaloriesPer100g = parsed ?? 0;
+        _formErrors = [];
+    }
+
+    private void OpenAdd()
+    {
+        _draft = new IngredientDto();
+        _editingId = null;
+        _formErrors = [];
+        _showEditor = true;
+    }
+
+    private void BeginEdit(IngredientDto item)
+    {
+        _draft = item.Clone();
+        _editingId = item.Id;
+        _formErrors = [];
+        _showEditor = true;
+    }
+
+    private void CancelEdit()
+    {
+        _showEditor = false;
+        _draft = new IngredientDto();
+        _editingId = null;
+        _formErrors = [];
+        _isSaving = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        var errors = IngredientValidator.Validate(_draft).ToList();
+
+        if (_editingId is Guid editingId)
+        {
+            var library = await Ingredients.GetAllAsync();
+            var clash = IngredientLibrary.FindExact(library, _draft.Name);
+            if (clash is not null && clash.Id != editingId)
+            {
+                errors.Add($"“{clash.Name}” is already in the library.");
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            _formErrors = errors;
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            if (_editingId is null)
+            {
+                var library = await Ingredients.GetAllAsync();
+                var existing = IngredientLibrary.FindExact(library, _draft.Name);
+                if (existing is not null)
+                {
+                    _draft.Id = existing.Id;
+                }
+            }
+
+            await Ingredients.SaveAsync(_draft);
+            CancelEdit();
+            await LoadPageAsync();
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void AskDelete(IngredientDto item)
+    {
+        _pendingDeleteId = item.Id;
+        _deleteMessage = $"“{item.Name}” has data. Delete it from the library? Saved recipes stay as they are.";
+        _showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        _showDeleteModal = false;
+        _pendingDeleteId = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        _showDeleteModal = false;
+        if (_pendingDeleteId is not Guid id)
+        {
+            return;
+        }
+
+        _pendingDeleteId = null;
+        if (_editingId == id)
+        {
+            CancelEdit();
+        }
+
+        await Ingredients.DeleteAsync(id);
+        await LoadPageAsync();
+    }
+
+    private static decimal? ParseOptionalDecimal(object? value)
+    {
+        var text = value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : null;
+    }
+}

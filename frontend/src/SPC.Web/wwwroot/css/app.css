@@ -79,6 +79,8 @@ a:hover {
 
 .app-main {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     width: min(1040px, 100%);
     margin: 0 auto;
     padding: 2rem 1.25rem 3rem;
@@ -213,6 +215,10 @@ a:hover {
     font-size: var(--text-small);
 }
 
+.page-header .btn {
+    margin-top: 1.25rem;
+}
+
 .muted {
     color: var(--color-muted);
 }
@@ -313,12 +319,48 @@ a:hover {
     border-bottom: none;
 }
 
+.saved-recipe-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 0;
+}
+
 .saved-recipe-link {
     display: flex;
+    flex: 1;
+    min-width: 0;
     flex-direction: column;
     gap: 0.2rem;
-    padding: 0.85rem 0;
+    padding: 0;
     color: inherit;
+}
+
+.list-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.list-pager-size {
+    margin-bottom: 0;
+    min-width: 7rem;
+}
+
+.list-pager-status {
+    margin: 0;
+    font-size: var(--text-small);
+}
+
+.list-pager-nav {
+    display: flex;
+    gap: 0.5rem;
 }
 
 .saved-recipe-link:hover .saved-recipe-name {
@@ -332,6 +374,39 @@ a:hover {
 .saved-recipe-meta {
     font-size: var(--text-small);
     color: var(--color-muted);
+}
+
+.saved-recipe-filter {
+    max-width: 14rem;
+}
+
+.list-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.list-filters .field {
+    margin-bottom: 0;
+}
+
+.list-row-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.5rem;
+}
+
+.page-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    flex: 1;
+}
+
+.page-stack-fill {
+    flex: 1;
 }
 
 .unsaved-hint {
@@ -369,6 +444,18 @@ a:hover {
     margin: 0 0 1.25rem;
     color: var(--color-muted);
     line-height: 1.5;
+}
+
+.modal-body {
+    margin: 0 0 1.25rem;
+}
+
+.modal-body .field:last-child {
+    margin-bottom: 0;
+}
+
+.modal-body .validation-errors {
+    margin-top: 0.75rem;
 }
 
 .modal-actions {
@@ -433,6 +520,14 @@ a:hover {
 .recipe-item-row .field {
     margin-bottom: 0;
     min-width: 0;
+}
+
+.name-combobox {
+    position: relative;
+}
+
+.name-combobox:focus-within {
+    z-index: 5;
 }
 
 .recipe-item-row .field label {
@@ -502,7 +597,7 @@ a:hover {
     font-size: var(--text-callout);
 }
 
-.lunch-target {
+.meal-target {
     margin: 0 0 1rem;
     padding: 0.85rem 1rem;
     border-radius: 10px;
@@ -510,7 +605,7 @@ a:hover {
     border: 1px solid var(--color-accent-border);
 }
 
-.lunch-target-line {
+.meal-target-line {
     margin: 0 0 0.35rem;
 }
 
@@ -697,7 +792,7 @@ fieldset.field legend {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: help;
+    cursor: default;
 }
 
 .info-tip-button:hover,
@@ -706,6 +801,7 @@ fieldset.field legend {
     border-color: var(--color-accent);
     color: #fff;
     outline: none;
+    cursor: default;
 }
 
 .info-tip-text {
@@ -806,4 +902,253 @@ fieldset.field legend {
 #blazor-error-ui .dismiss {
     cursor: pointer;
     margin-left: 1rem;
+}
+
+.instruction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.instruction-step {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr) 2.5rem;
+    gap: 0.5rem;
+    align-items: start;
+}
+
+.instruction-step-num {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-muted);
+    line-height: 2.25rem;
+    text-align: right;
+}
+
+.instruction-step-main {
+    position: relative;
+    min-width: 0;
+}
+
+.editor-instructions-card {
+    margin-top: 1.25rem;
+    padding: 1.1rem 1.25rem 1.35rem;
+}
+
+.editor-instructions-card .section-title {
+    margin-top: 0;
+}
+
+.instruction-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-accent-border);
+    background: var(--color-accent-soft);
+    color: var(--color-accent-dark);
+    font-size: var(--text-small);
+    font-weight: var(--font-weight-semibold);
+    cursor: default;
+}
+
+.instruction-chip.is-missing {
+    border-color: var(--color-danger-border);
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.instruction-chip-remove {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: 1;
+    padding: 0 0.1rem;
+    cursor: pointer;
+}
+
+.instruction-chip-tip {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 30;
+    width: max-content;
+    max-width: 16rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    background: var(--color-text);
+    color: #fff;
+    font-size: var(--text-caption);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-tooltip);
+    box-shadow: var(--shadow);
+}
+
+.instruction-chip:hover .instruction-chip-tip,
+.instruction-chip:focus-within .instruction-chip-tip {
+    display: block;
+}
+
+.instruction-picker {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 40;
+    padding: 0.65rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.instruction-picker-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 12rem;
+    overflow: auto;
+}
+
+.instruction-picker-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.45rem 0.5rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.instruction-picker-item:hover {
+    background: var(--color-accent-soft);
+}
+
+.instruction-readout {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.instruction-readout li {
+    margin: 0.35rem 0;
+    line-height: 1.5;
+}
+
+.instruction-readout .instruction-chip {
+    margin: 0 0.15rem;
+}
+
+/* TipTap instruction editor */
+
+.editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.editor-toolbar-btn {
+    min-width: 2.25rem;
+    padding: 0.35rem 0.55rem;
+}
+
+.rich-editor-host {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    min-height: 10rem;
+}
+
+.rich-editor-content,
+.rich-editor-surface {
+    min-height: 9rem;
+    padding: 0.75rem 0.85rem;
+    line-height: 1.55;
+    outline: none;
+}
+
+.rich-editor-content:focus,
+.rich-editor-surface:focus {
+    outline: 2px solid var(--color-accent-border);
+    outline-offset: -2px;
+}
+
+.rich-editor-bold {
+    font-weight: var(--font-weight-bold);
+}
+
+.rich-editor-italic {
+    font-style: italic;
+}
+
+.rich-editor-ul {
+    margin: 0.35rem 0;
+    padding-left: 1.25rem;
+}
+
+.rich-editor-li {
+    margin: 0.2rem 0;
+}
+
+.editor-mention {
+    margin: 0 0.1rem;
+    vertical-align: baseline;
+}
+
+.editor-mention-picker {
+    position: fixed;
+    z-index: 1000;
+}
+
+.instruction-picker-item.is-active {
+    background: var(--color-accent-soft);
+}
+
+.editor-picker-meta {
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+}
+
+.editor-output {
+    margin-top: 1rem;
+}
+
+.editor-output h3 {
+    margin: 0.75rem 0 0.35rem;
+    font-size: var(--text-small);
+    color: var(--color-muted);
+    font-weight: var(--font-weight-semibold);
+}
+
+.editor-output pre {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: #f8fbf9;
+    font-size: var(--text-caption);
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 12rem;
+    overflow: auto;
+}
+
+.ProseMirror p {
+    margin: 0.35rem 0;
+}
+
+.ProseMirror ul {
+    margin: 0.35rem 0;
+    padding-left: 1.25rem;
 }

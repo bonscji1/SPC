@@ -29,11 +29,13 @@ Open http://localhost:5180
 | [Architecture](./architecture.md) | done | Projects, state, UI patterns and product preferences |
 | [UI and typography](./ui.md) | done | Font, type scale, InfoTip, layout classes |
 | [Portion and calorie model](./portion-math.md) | done | Ingredient-sum + yield; pairing grams with pack kcal/100 g |
-| [Energy targets](./energy-targets.md) | done | Mifflin–St Jeor, PAL, meal split; profiles independent of recipes |
+| [Energy targets](./energy-targets.md) | done | Mifflin–St Jeor, US activity factors, meal split; profiles independent of recipes |
+| [Future improvements](./future-improvements.md) | living | Deferred frontend features (e.g. EFSA energy model choice) |
+| [Recipe instructions](./recipe-instructions.md) | done | Ordered steps; chips linked to ingredient/spice ids |
 | _Stack and tooling_ | done | Blazor WASM, .NET 10, SPC.Core |
 | _Project structure_ | done | See architecture doc |
 | _Components and UI_ | done | See [ui.md](./ui.md) and architecture product preferences |
-| _State and data fetching_ | partial | RecipeDraftService; recipe + profile repos (localStorage) |
+| _State and data fetching_ | partial | Recipe, profile, and ingredient-library repos (localStorage); paged home and library lists |
 | _Testing_ | partial | Core unit tests including portion math and energy targets |
 
 ## Agent instructions

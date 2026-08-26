@@ -1,4 +1,5 @@
 using SPC.Core.Models;
+using SPC.Core.Services;
 using Xunit;
 
 namespace SPC.Core.Tests.Models;
@@ -44,10 +45,31 @@ public class RecipeEquivalenceTests
         Assert.False(RecipeEquivalence.AreEquivalent(left, right));
     }
 
+    [Fact]
+    public void AreEquivalent_ReturnsFalse_WhenInstructionsDiffer()
+    {
+        var left = CreateSample();
+        var right = left.Clone();
+        right.Instructions.Add(InstructionEditor.NewStep());
+        right.Instructions[^1].Tokens[0].Text = "bake";
+
+        Assert.False(RecipeEquivalence.AreEquivalent(left, right));
+    }
+
+    [Fact]
+    public void AreEquivalent_ReturnsFalse_WhenMealTypeDiffers()
+    {
+        var left = CreateSample();
+        var right = left.Clone();
+        right.MealType = MealType.Dinner;
+
+        Assert.False(RecipeEquivalence.AreEquivalent(left, right));
+    }
+
     private static RecipeDto CreateSample() => new()
     {
         Name = "Stew",
-        Ingredients = [new IngredientDto { Name = "carrot", Grams = 100, CaloriesPer100g = 41 }],
+        Ingredients = [new RecipeIngredientDto { Name = "carrot", Grams = 100, CaloriesPer100g = 41 }],
         Spices = [new SpiceDto { Name = "salt", Grams = 2 }],
     };
 }

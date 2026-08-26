@@ -1,0 +1,31 @@
+<span class="instruction-chip @(IsMissing ? "is-missing" : null)">
+    <span class="instruction-chip-label">@Text</span>
+    @if (ShowRemove)
+    {
+        <button type="button"
+                class="instruction-chip-remove"
+                title="Unlink"
+                @onclick="OnRemove">×</button>
+    }
+    @if (!string.IsNullOrEmpty(Hover))
+    {
+        <span class="instruction-chip-tip" role="tooltip">@Hover</span>
+    }
+</span>
+
+@code {
+    [Parameter]
+    public string Text { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Hover { get; set; }
+
+    [Parameter]
+    public bool IsMissing { get; set; }
+
+    [Parameter]
+    public bool ShowRemove { get; set; }
+
+    [Parameter]
+    public EventCallback OnRemove { get; set; }
+}

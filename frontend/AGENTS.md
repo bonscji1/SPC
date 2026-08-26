@@ -62,5 +62,7 @@ frontend/
 | UI / typography | `docs/ui.md` |
 | Portion math | `docs/portion-math.md` |
 | Energy targets | `docs/energy-targets.md` |
+| Future improvements | `docs/future-improvements.md` |
+| Recipe instructions | `docs/recipe-instructions.md` |
 | Shared docs | `../docs/README.md` |
 | Implementation plans | `../plans/thePlan.md` |

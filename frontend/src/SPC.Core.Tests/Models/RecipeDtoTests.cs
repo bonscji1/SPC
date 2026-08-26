@@ -12,6 +12,7 @@ public class RecipeDtoTests
 
         Assert.Equal("Test stew", recipe.Name);
         Assert.Empty(recipe.Ingredients);
+        Assert.Equal(MealType.Lunch, recipe.MealType);
         Assert.NotEqual(Guid.Empty, recipe.Id);
     }
 }

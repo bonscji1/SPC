@@ -66,7 +66,7 @@ Component: `src/SPC.Web/Components/InfoTip.razor`.
 | `--size-info-tip` | 0.7rem | Circle diameter. **Smaller than adjacent text** (caption is 0.8rem, labels 0.9rem). |
 | `--text-info-mark` | 0.5rem | Italic **i** inside the circle. |
 
-Hover/focus shows `--text-caption` tooltip (`--line-tooltip` 1.35), dark background, normal sentence case (do not inherit uppercase from `dt`).
+Hover/focus shows `--text-caption` tooltip (`--line-tooltip` 1.35), dark background, normal sentence case (do not inherit uppercase from `dt`). Cursor stays the default arrow (not help/pointer).
 
 **When to use**
 
@@ -82,6 +82,10 @@ Hover/focus shows `--text-caption` tooltip (`--line-tooltip` 1.35), dark backgro
 | `.editor-card` + `.editor-section` | Grouped fields on an edit page. |
 | `.summary-card` + `.summary-section` | Live preview; subsections divided by a top border. |
 | `.recipe-layout` | Two columns from 900px: editor \| summary. Use for create/edit pages. |
+| `.page-stack` | Full-width stacked cards (library). Last card `.page-stack-fill` grows with the page. |
+| `.list-pager` | Page size, “Page X of Y”, previous/next under a list (`ListPager`). Sizes 10 / 25 / 50. Status uses `--text-small`. |
+| `.list-filters` | Name (and type on Home) above a list. |
+| `.name-combobox` | Ingredient/spice name field with library picker (reuses `.instruction-picker`). |
 | `.portion-inputs` | Two-column field grid (one column under 720px). |
 | `.field` | Label + control + optional hint. |
 

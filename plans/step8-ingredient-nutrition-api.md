@@ -26,7 +26,7 @@ Reduce manual entry of **calories per 100 g** by looking up ingredients from an 
 ## Deliverables
 
 - [ ] Research note in `docs/` comparing 2–3 API options
-- [ ] Lookup by ingredient name (fuzzy match)
+- [ ] Lookup by ingredient name (fuzzy match). While search is local, filter on each keystroke. When lookup is HTTP, debounce 200–250 ms and spinner only if the request is still in flight (`frontend/docs/architecture.md`).
 - [ ] Autofill `caloriesPer100g` in step 2 ingredient row
 - [ ] Cache results in ingredient library (step 5)
 - [ ] Graceful fallback: manual entry if lookup fails

@@ -33,3 +33,6 @@ TestResults/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node (editor comparison bundles)
+node_modules/

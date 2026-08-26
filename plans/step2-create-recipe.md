@@ -1,8 +1,9 @@
 # Plan: Step 2 — Create a recipe
 
 **Date:** 2026-08-24  
+**Updated:** 2026-08-26  
 **Scope:** frontend  
-**Status:** draft  
+**Status:** implemented — recipe editor with ingredients, spices, TipTap instructions; live portion summary  
 **Depends on:** [step1-init-fe.md](./step1-init-fe.md) — complete  
 **Parent:** [thePlan.md](./thePlan.md)
 
@@ -38,6 +39,13 @@ Example ingredient row: **carrot — 200 g — 41 kcal/100 g**
 - [x] Basic validation (non-empty name, positive grams, non-negative calories)
 - [x] Display a summary of entered ingredients (read-only list or live preview)
 - [x] Recipe object available in app state for the next step (no API yet)
+- [x] Ordered instruction steps with ingredient/spice chips (TipTap editor; ids, not `#name` text)
+
+## Also delivered (beyond original step 2 scope)
+
+- Spices section (optional grams/kcal rows)
+- Instruction steps with `#` mention picker and rich text (see [step-recipe-instructions.md](./step-recipe-instructions.md))
+- Recipes persist in localStorage when saved (step 5 — partial; see [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md))
 
 ## UX notes
 
@@ -49,7 +57,7 @@ Example ingredient row: **carrot — 200 g — 41 kcal/100 g**
 
 - User can create a recipe with at least one ingredient and see it reflected in state
 - Invalid input is caught with clear messages
-- Refreshing the page may clear data (acceptable until step 5)
+- Refreshing the page may clear unsaved data; saved recipes and profiles survive reload (step 5)
 
 ## Future hooks
 

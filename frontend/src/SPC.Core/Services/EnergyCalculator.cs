@@ -4,15 +4,15 @@ using SPC.Core.Validation;
 namespace SPC.Core.Services;
 
 /// <summary>
-/// Mifflin–St Jeor BMR × PAL (preset or custom). Meal kcal = TDEE × profile meal percent.
+/// Mifflin–St Jeor BMR × US activity factors (preset or custom). Meal kcal = TDEE × profile meal percent.
 /// </summary>
 public sealed class EnergyCalculator : IEnergyCalculator
 {
-    public const decimal PalSedentary = 1.4m;
-    public const decimal PalLight = 1.5m;
-    public const decimal PalModerate = 1.6m;
-    public const decimal PalActive = 1.8m;
-    public const decimal PalVeryActive = 2.0m;
+    public const decimal PalSedentary = 1.2m;
+    public const decimal PalLight = 1.375m;
+    public const decimal PalModerate = 1.55m;
+    public const decimal PalActive = 1.725m;
+    public const decimal PalVeryActive = 1.9m;
 
     public EnergyEstimateDto Estimate(UserProfileDto profile)
     {

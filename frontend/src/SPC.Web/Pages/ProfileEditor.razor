@@ -31,7 +31,7 @@
 
 <div class="page-header">
     <h1>@PageHeading</h1>
-    <p class="muted">Used to suggest a lunch calorie target while cooking. Not attached to recipes.</p>
+    <p class="muted">Used to suggest a meal calorie target while cooking. Not attached to recipes.</p>
 </div>
 
 @if (!string.IsNullOrEmpty(_loadError))
@@ -117,7 +117,7 @@ else
 
             <section class="editor-section">
                 <h2 class="section-title">Activity</h2>
-                <p class="section-hint muted">Physical activity level (PAL) multiplied by BMR for daily maintenance.</p>
+                <p class="section-hint muted">US activity factor multiplied by BMR for daily maintenance (paired with Mifflin–St Jeor).</p>
                 <div class="field">
                     <label for="profile-activity">Activity type</label>
                     <select id="profile-activity"

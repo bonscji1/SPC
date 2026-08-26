@@ -17,9 +17,9 @@ public class EnergyCalculatorTests
         var result = _calculator.Calculate(profile, MealType.Lunch);
 
         Assert.Equal(1780m, result.BmrKcal);
-        Assert.Equal(2850m, result.TdeeKcal);
+        Assert.Equal(2760m, result.TdeeKcal);
         Assert.Equal(30m, result.MealPercent);
-        Assert.Equal(860m, result.MealKcal);
+        Assert.Equal(830m, result.MealKcal);
     }
 
     [Fact]
@@ -38,8 +38,8 @@ public class EnergyCalculatorTests
         var result = _calculator.Calculate(profile, MealType.Lunch);
 
         Assert.Equal(1350m, result.BmrKcal);
-        Assert.Equal(2020m, result.TdeeKcal);
-        Assert.Equal(610m, result.MealKcal);
+        Assert.Equal(1850m, result.TdeeKcal);
+        Assert.Equal(560m, result.MealKcal);
     }
 
     [Fact]
@@ -51,16 +51,16 @@ public class EnergyCalculatorTests
 
         var result = _calculator.Calculate(profile, MealType.Lunch);
 
-        Assert.Equal(2850m, result.TdeeKcal);
-        Assert.Equal(1140m, result.MealKcal);
+        Assert.Equal(2760m, result.TdeeKcal);
+        Assert.Equal(1100m, result.MealKcal);
     }
 
     [Fact]
-    public void PalFor_MapsEfsaStyleFactors()
+    public void PalFor_MapsUsActivityFactors()
     {
-        Assert.Equal(1.4m, EnergyCalculator.PalFor(ActivityLevel.Sedentary));
-        Assert.Equal(1.6m, EnergyCalculator.PalFor(ActivityLevel.Moderate));
-        Assert.Equal(2.0m, EnergyCalculator.PalFor(ActivityLevel.VeryActive));
+        Assert.Equal(1.2m, EnergyCalculator.PalFor(ActivityLevel.Sedentary));
+        Assert.Equal(1.55m, EnergyCalculator.PalFor(ActivityLevel.Moderate));
+        Assert.Equal(1.9m, EnergyCalculator.PalFor(ActivityLevel.VeryActive));
     }
 
     [Fact]
@@ -79,12 +79,12 @@ public class EnergyCalculatorTests
         var result = _calculator.Estimate(ValidMale());
 
         Assert.Equal(1780m, result.BmrKcal);
-        Assert.Equal(1.6m, result.Pal);
-        Assert.Equal(2850m, result.TdeeKcal);
-        Assert.Equal(570m, result.BreakfastKcal);
-        Assert.Equal(860m, result.LunchKcal);
-        Assert.Equal(1000m, result.DinnerKcal);
-        Assert.Equal(430m, result.SnackKcal);
+        Assert.Equal(1.55m, result.Pal);
+        Assert.Equal(2760m, result.TdeeKcal);
+        Assert.Equal(550m, result.BreakfastKcal);
+        Assert.Equal(830m, result.LunchKcal);
+        Assert.Equal(970m, result.DinnerKcal);
+        Assert.Equal(410m, result.SnackKcal);
     }
 
     [Fact]

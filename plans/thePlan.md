@@ -1,8 +1,9 @@
 # Plan: Smart Pig's Cookbook — Master roadmap
 
 **Date:** 2026-08-24  
+**Updated:** 2026-08-26  
 **Scope:** both (frontend-first; backend when persistence/API is needed)  
-**Status:** draft — steps may be refined as we learn
+**Status:** in progress — steps 1–5 done; next is cookbook (step 6) or scaling (step 7)
 
 ## Vision
 
@@ -22,20 +23,20 @@ A recipe and portion calculator for people who cook and care about calories with
 - **Incremental delivery** — each step builds on the previous and is independently testable.
 - **Refine as we go** — sub-plans are living documents; update them when design lessons emerge.
 - **Frontend-first** — early steps run locally in the browser; persistence and APIs come when needed.
-- **Stack TBD** — see `notes-tech-stack-options.md`; choose after design stabilizes.
+- **Stack** — Blazor WebAssembly on .NET 10 (`SPC.Web` + `SPC.Core`). See `notes-tech-stack-options.md` for the earlier options.
 
 ## Roadmap
 
-| Step | Goal | Sub-plan |
-|------|------|----------|
-| 1 | Runnable local frontend shell for iteration | [step1-init-fe.md](./step1-init-fe.md) |
-| 2 | Create a recipe (name + ingredients with grams and cal/100g) | [step2-create-recipe.md](./step2-create-recipe.md) |
-| 3 | Compute dish totals; portions ↔ kcal/portion; optional cooked yield | [step3-compute-portions.md](./step3-compute-portions.md) |
-| 4 | Derive lunch kcal from selectable person profiles (meal split per person) | [step4-human-tracking.md](./step4-human-tracking.md) |
-| 5 | Persist recipes and ingredient nutrition data | [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md) |
-| 6 | Cookbook — browse and open saved recipes | [step6-cookbook.md](./step6-cookbook.md) |
-| 7 | Recipe scaling and what-if adjustments (portions, add/remove ingredient) | [step7-recipe-adjustment.md](./step7-recipe-adjustment.md) |
-| 8 | Automatic ingredient nutrition lookup (API) | [step8-ingredient-nutrition-api.md](./step8-ingredient-nutrition-api.md) |
+| Step | Goal | Status | Sub-plan |
+|------|------|--------|----------|
+| 1 | Runnable local frontend shell for iteration | **done** | [step1-init-fe.md](./step1-init-fe.md) |
+| 2 | Create a recipe (name, ingredients, spices, TipTap instructions) | **done** | [step2-create-recipe.md](./step2-create-recipe.md), [step-recipe-instructions.md](./step-recipe-instructions.md) |
+| 3 | Compute dish totals; portions ↔ kcal/portion; optional cooked yield | **done** | [step3-compute-portions.md](./step3-compute-portions.md) |
+| 4 | Derive lunch kcal from selectable person profiles (meal split per person) | **done** | [step4-human-tracking.md](./step4-human-tracking.md) |
+| 5 | Persist recipes and ingredient nutrition data | **done** — localStorage; backend later | [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md) |
+| 6 | Cookbook — browse and open saved recipes | draft (home has a simple saved-recipe list) | [step6-cookbook.md](./step6-cookbook.md) |
+| 7 | Recipe scaling and what-if adjustments (portions, add/remove ingredient) | draft | [step7-recipe-adjustment.md](./step7-recipe-adjustment.md) |
+| 8 | Automatic ingredient nutrition lookup (API) | draft | [step8-ingredient-nutrition-api.md](./step8-ingredient-nutrition-api.md) |
 
 ### Future / aspirational (not scheduled)
 
@@ -70,6 +71,6 @@ Steps 6 and 7 can be reordered after step 5 depending on priority.
 
 ## Open questions (cross-cutting)
 
-- When do we introduce a backend vs. localStorage-only persistence?
+- When do we introduce a backend vs. localStorage-only persistence? **Step 5 is done on localStorage.** Real app: HTTP API + PostgreSQL behind the same repository interfaces; see [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md).
 - Which nutrition API (if any) is viable for step 8 — licensing, coverage, Czech/EU foods?
-- Exact formulas for TDEE / meal calorie split — validate with a simple, documented approach first.
+- ~~Exact formulas for TDEE / meal calorie split~~ — decided: Mifflin–St Jeor × US activity factors; see `frontend/docs/energy-targets.md`.

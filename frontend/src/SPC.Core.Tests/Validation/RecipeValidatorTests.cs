@@ -11,7 +11,7 @@ public class RecipeValidatorTests
     {
         var recipe = new RecipeDto
         {
-            Ingredients = [new IngredientDto { Name = "carrot", Grams = 100, CaloriesPer100g = 41 }],
+            Ingredients = [new RecipeIngredientDto { Name = "carrot", Grams = 100, CaloriesPer100g = 41 }],
         };
 
         var errors = RecipeValidator.ValidateRecipe(recipe);
@@ -32,7 +32,7 @@ public class RecipeValidatorTests
     [Fact]
     public void ValidateIngredient_ReturnsError_WhenGramsNotPositive()
     {
-        var ingredient = new IngredientDto { Name = "carrot", Grams = 0, CaloriesPer100g = 41 };
+        var ingredient = new RecipeIngredientDto { Name = "carrot", Grams = 0, CaloriesPer100g = 41 };
 
         var errors = RecipeValidator.ValidateIngredient(ingredient);
 
@@ -42,7 +42,7 @@ public class RecipeValidatorTests
     [Fact]
     public void ValidateIngredient_ReturnsError_WhenCaloriesNegative()
     {
-        var ingredient = new IngredientDto { Name = "carrot", Grams = 100, CaloriesPer100g = -1 };
+        var ingredient = new RecipeIngredientDto { Name = "carrot", Grams = 100, CaloriesPer100g = -1 };
 
         var errors = RecipeValidator.ValidateIngredient(ingredient);
 
@@ -57,8 +57,8 @@ public class RecipeValidatorTests
             Name = "Stew",
             Ingredients =
             [
-                new IngredientDto { Name = "carrot", Grams = 200, CaloriesPer100g = 41 },
-                new IngredientDto { Name = "potato", Grams = 150, CaloriesPer100g = 77 },
+                new RecipeIngredientDto { Name = "carrot", Grams = 200, CaloriesPer100g = 41 },
+                new RecipeIngredientDto { Name = "potato", Grams = 150, CaloriesPer100g = 77 },
             ],
         };
 
@@ -72,8 +72,8 @@ public class RecipeValidatorTests
         {
             Ingredients =
             [
-                new IngredientDto { Grams = 200 },
-                new IngredientDto { Grams = 150.5m },
+                new RecipeIngredientDto { Grams = 200 },
+                new RecipeIngredientDto { Grams = 150.5m },
             ],
         };
 
@@ -85,7 +85,7 @@ public class RecipeValidatorTests
     {
         var recipe = new RecipeDto
         {
-            Ingredients = [new IngredientDto { Grams = 200, CaloriesPer100g = 41 }],
+            Ingredients = [new RecipeIngredientDto { Grams = 200, CaloriesPer100g = 41 }],
         };
 
         Assert.Equal(82m, RecipeValidator.GetTotalCalories(recipe));
@@ -122,7 +122,7 @@ public class RecipeValidatorTests
     {
         var recipe = new RecipeDto
         {
-            Ingredients = [new IngredientDto { Grams = 200 }],
+            Ingredients = [new RecipeIngredientDto { Grams = 200 }],
             Spices = [new SpiceDto { Name = "salt", Grams = 5 }],
         };
 

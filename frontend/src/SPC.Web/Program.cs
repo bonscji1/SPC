@@ -15,6 +15,7 @@ builder.Services.AddSingleton<IPortionCalculator, PortionCalculator>();
 builder.Services.AddSingleton<IEnergyCalculator, EnergyCalculator>();
 builder.Services.AddScoped<IBrowserLocalStorage, BrowserLocalStorage>();
 builder.Services.AddScoped<IRecipeRepository, LocalStorageRecipeRepository>();
+builder.Services.AddScoped<IIngredientRepository, LocalStorageIngredientRepository>();
 builder.Services.AddScoped<IUserProfileRepository, LocalStorageUserProfileRepository>();
 builder.Services.AddScoped<ActiveProfileService>();
 

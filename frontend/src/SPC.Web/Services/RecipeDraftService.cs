@@ -1,4 +1,5 @@
 using SPC.Core.Models;
+using SPC.Core.Services;
 
 namespace SPC.Web.Services;
 
@@ -37,11 +38,15 @@ public sealed class RecipeDraftService
 
     public void MarkClean() => _baseline = Recipe.Clone();
 
-    public void AddIngredient() => Recipe.Ingredients.Add(new IngredientDto());
+    public void AddIngredient() => Recipe.Ingredients.Add(new RecipeIngredientDto());
 
     public void RemoveIngredient(Guid id) => Recipe.Ingredients.RemoveAll(i => i.Id == id);
 
     public void AddSpice() => Recipe.Spices.Add(new SpiceDto());
 
     public void RemoveSpice(Guid id) => Recipe.Spices.RemoveAll(s => s.Id == id);
+
+    public void AddInstruction() => Recipe.Instructions.Add(InstructionEditor.NewStep());
+
+    public void RemoveInstruction(Guid id) => Recipe.Instructions.RemoveAll(s => s.Id == id);
 }

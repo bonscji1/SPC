@@ -8,26 +8,26 @@
 <section class="card summary-card">
     <h2>Summary</h2>
 
-    @if (LunchTargetKcal is decimal lunchKcal)
+    @if (MealTargetKcal is decimal mealKcal)
     {
-        <div class="lunch-target">
-            <p class="lunch-target-line">
-                Lunch for <strong>@(string.IsNullOrWhiteSpace(ProfileName) ? "this profile" : ProfileName)</strong>:
-                <strong>@FormatCalories(lunchKcal)</strong>
-                @if (!string.IsNullOrEmpty(LunchTooltip))
+        <div class="meal-target">
+            <p class="meal-target-line">
+                @MealTypes.DisplayName(Recipe.MealType) for <strong>@(string.IsNullOrWhiteSpace(ProfileName) ? "this profile" : ProfileName)</strong>:
+                <strong>@FormatCalories(mealKcal)</strong>
+                @if (!string.IsNullOrEmpty(MealTargetTooltip))
                 {
-                    <InfoTip Text="@LunchTooltip" AriaLabel="About lunch calories" />
+                    <InfoTip Text="@MealTargetTooltip" AriaLabel="@($"About {MealTypes.DisplayName(Recipe.MealType).ToLowerInvariant()} calories")" />
                 }
             </p>
-            <p class="field-hint muted">Suggestion from the selected profile. Not stored on the recipe.</p>
-            <button type="button" class="btn btn-secondary" @onclick="OnUseLunchTarget">
+            <p class="field-hint muted">Suggestion from the selected profile’s @MealTypes.DisplayName(Recipe.MealType).ToLowerInvariant() split. Not stored on the recipe.</p>
+            <button type="button" class="btn btn-secondary" @onclick="OnUseMealTarget">
                 Use as portion target
             </button>
         </div>
     }
     else
     {
-        <p class="muted field-hint">Select a profile (top right) to see a lunch calorie target.</p>
+        <p class="muted field-hint">Select a profile (top right) to see a @MealTypes.DisplayName(Recipe.MealType).ToLowerInvariant() calorie target.</p>
     }
 
     @if (string.IsNullOrWhiteSpace(Recipe.Name) && Recipe.Ingredients.Count == 0 && !Recipe.Spices.Any(RecipeValidator.IsSpiceRowTouched))
@@ -40,6 +40,10 @@
             <div>
                 <dt>Recipe</dt>
                 <dd>@(string.IsNullOrWhiteSpace(Recipe.Name) ? "—" : Recipe.Name)</dd>
+            </div>
+            <div>
+                <dt>Type</dt>
+                <dd>@MealTypes.DisplayName(Recipe.MealType)</dd>
             </div>
             <div>
                 <dt>Ingredients</dt>
@@ -226,13 +230,13 @@
     public string? ProfileName { get; set; }
 
     [Parameter]
-    public decimal? LunchTargetKcal { get; set; }
+    public decimal? MealTargetKcal { get; set; }
 
     [Parameter]
-    public string? LunchTooltip { get; set; }
+    public string? MealTargetTooltip { get; set; }
 
     [Parameter]
-    public EventCallback OnUseLunchTarget { get; set; }
+    public EventCallback OnUseMealTarget { get; set; }
 
     [Parameter]
     public EventCallback<decimal?> OnActualDishWeightGChanged { get; set; }

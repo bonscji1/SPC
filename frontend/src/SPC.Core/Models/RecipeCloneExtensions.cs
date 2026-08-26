@@ -10,8 +10,9 @@ public static class RecipeCloneExtensions
         {
             Id = recipe.Id,
             Name = recipe.Name,
+            MealType = recipe.MealType,
             UpdatedAt = recipe.UpdatedAt,
-            Ingredients = recipe.Ingredients.Select(i => new IngredientDto
+            Ingredients = recipe.Ingredients.Select(i => new RecipeIngredientDto
             {
                 Id = i.Id,
                 Name = i.Name,
@@ -24,6 +25,18 @@ public static class RecipeCloneExtensions
                 Name = s.Name,
                 Grams = s.Grams,
                 CaloriesPer100g = s.CaloriesPer100g,
+            }).ToList(),
+            Instructions = (recipe.Instructions ?? []).Select(step => new InstructionStepDto
+            {
+                Id = step.Id,
+                EditorJson = step.EditorJson,
+                Tokens = step.Tokens.Select(t => new InstructionTokenDto
+                {
+                    Id = t.Id,
+                    Kind = t.Kind,
+                    Text = t.Text,
+                    ItemId = t.ItemId,
+                }).ToList(),
             }).ToList(),
             ActualDishWeightG = recipe.ActualDishWeightG,
         };

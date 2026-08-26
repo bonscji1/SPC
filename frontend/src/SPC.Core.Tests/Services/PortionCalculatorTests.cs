@@ -79,7 +79,7 @@ public class PortionCalculatorTests
         {
             Ingredients =
             [
-                new IngredientDto { Name = "carrot", Grams = 200, CaloriesPer100g = 41 },
+                new RecipeIngredientDto { Name = "carrot", Grams = 200, CaloriesPer100g = 41 },
             ],
             Spices =
             [
@@ -153,6 +153,6 @@ public class PortionCalculatorTests
         new()
         {
             Name = "Fixture",
-            Ingredients = [new IngredientDto { Name = "item", Grams = grams, CaloriesPer100g = kcalPer100g }],
+            Ingredients = [new RecipeIngredientDto { Name = "item", Grams = grams, CaloriesPer100g = kcalPer100g }],
         };
 }

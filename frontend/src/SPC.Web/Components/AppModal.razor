@@ -3,7 +3,16 @@
     <div class="modal-backdrop" @onclick="HandleBackdropClick">
         <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="@_titleId" @onclick:stopPropagation="true">
             <h2 id="@_titleId" class="modal-title">@Title</h2>
-            <p class="modal-message">@Message</p>
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <p class="modal-message">@Message</p>
+            }
+            @if (ChildContent is not null)
+            {
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+            }
 
             <div class="modal-actions">
                 @if (ShowCancel)
@@ -12,7 +21,7 @@
                         @CancelText
                     </button>
                 }
-                <button type="button" class="btn @ConfirmButtonClass" @onclick="ConfirmAsync">
+                <button type="button" class="btn @ConfirmButtonClass" disabled="@ConfirmDisabled" @onclick="ConfirmAsync">
                     @ConfirmText
                 </button>
             </div>
@@ -43,6 +52,12 @@
 
     [Parameter]
     public bool IsError { get; set; }
+
+    [Parameter]
+    public bool ConfirmDisabled { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
 
     [Parameter]
     public EventCallback OnConfirm { get; set; }

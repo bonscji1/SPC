@@ -13,6 +13,7 @@
 @inject ActiveProfileService ActiveProfiles
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
+@inject IIngredientRepository IngredientRepository
 
 <PageTitle>@PageTitle — Smart Pig's Cookbook</PageTitle>
 
@@ -34,9 +35,27 @@
           OnConfirm="ConfirmLeave"
           OnCancel="CancelLeave" />
 
+<AppModal IsOpen="_showDeleteModal"
+          Title="Delete this recipe?"
+          Message="@_deleteMessage"
+          ConfirmText="Delete"
+          CancelText="Cancel"
+          ShowCancel="true"
+          OnConfirm="ConfirmDeleteAsync"
+          OnCancel="CancelDelete" />
+
+<AppModal IsOpen="_showLibraryModal"
+          Title="Update ingredient library?"
+          Message="@_libraryModalMessage"
+          ConfirmText="Update library"
+          CancelText="Keep library"
+          ShowCancel="true"
+          OnConfirm="ConfirmLibraryUpdatesAsync"
+          OnCancel="CancelLibraryUpdates" />
+
 <div class="page-header">
     <h1>@PageHeading</h1>
-    <p class="muted">Name your dish, list ingredients, and set portions or kcal per portion.</p>
+    <p class="muted">Name your dish, list ingredients, and write the cooking steps.</p>
 </div>
 
 @if (!string.IsNullOrEmpty(_loadError))
@@ -51,7 +70,7 @@ else
         <section class="card editor-card">
             <section class="editor-section">
                 <h2 class="section-title">General</h2>
-                <p class="section-hint muted">Name of the dish.</p>
+                <p class="section-hint muted">Name of the dish and which meal it is for.</p>
                 <div class="field">
                     <label for="recipe-name">Recipe name</label>
                     <input id="recipe-name"
@@ -60,11 +79,24 @@ else
                            value="@Draft.Recipe.Name"
                            @oninput="OnRecipeNameInput" />
                 </div>
+                <div class="field">
+                    <label for="recipe-meal-type">Recipe type</label>
+                    <select id="recipe-meal-type"
+                            class="input"
+                            value="@Draft.Recipe.MealType"
+                            @onchange="OnMealTypeChanged">
+                        @foreach (var meal in MealTypes.All)
+                        {
+                            <option value="@meal">@MealTypes.DisplayName(meal)</option>
+                        }
+                    </select>
+                    <p class="field-hint muted">Matches the selected profile’s meal split for a calorie suggestion.</p>
+                </div>
             </section>
 
             <section class="editor-section">
                 <h2 class="section-title">Ingredients</h2>
-                <p class="section-hint muted">Grams and kcal per 100 g are required.</p>
+                <p class="section-hint muted">Grams and kcal per 100 g are required. Pick a name from the library to fill kcal.</p>
 
                 <div class="recipe-item-list">
                     @foreach (var ingredient in Draft.Recipe.Ingredients)
@@ -74,6 +106,7 @@ else
                                        Grams="@ingredient.Grams"
                                        CaloriesPer100g="@ingredient.CaloriesPer100g"
                                        CanRemove="Draft.Recipe.Ingredients.Count > 1"
+                                       OccupiedNames="@OccupiedIngredientNames(ingredient.Id)"
                                        OnChanged="@(change => UpdateIngredient(ingredient, change))"
                                        OnRemove="@(() => RemoveIngredient(ingredient.Id))" />
                     }
@@ -88,7 +121,7 @@ else
 
             <section class="editor-section">
                 <h2 class="section-title">Spices</h2>
-                <p class="section-hint muted">Optional. Name only is fine — grams and kcal can be left blank.</p>
+                <p class="section-hint muted">Optional. Name only is fine — grams and kcal can be left blank. Pick from the library when kcal is known.</p>
 
                 @if (Draft.Recipe.Spices.Count == 0)
                 {
@@ -110,7 +143,10 @@ else
                                            CaloriesLabel="kcal / 100 g (optional)"
                                            CaloriesPlaceholder="—"
                                            RemoveTitle="Remove spice"
+                                           RemoveConfirmTitle="Remove this spice?"
+                                           RemoveConfirmMessage="This spice has data. Remove it?"
                                            CanRemove="true"
+                                           OccupiedNames="@OccupiedSpiceNames(spice.Id)"
                                            OnChanged="@(change => UpdateSpice(spice, change))"
                                            OnRemove="@(() => RemoveSpice(spice.Id))" />
                         }
@@ -131,9 +167,9 @@ else
                            TargetKind="Draft.PortionTargetKind"
                            TargetValue="Draft.PortionTargetValue"
                            ProfileName="@ActiveProfiles.Active?.Name"
-                           LunchTargetKcal="@LunchTargetKcal"
-                           LunchTooltip="@LunchTooltip"
-                           OnUseLunchTarget="UseLunchTarget"
+                           MealTargetKcal="@MealTargetKcal"
+                           MealTargetTooltip="@MealTargetTooltip"
+                           OnUseMealTarget="UseMealTarget"
                            OnActualDishWeightGChanged="OnActualWeightChanged"
                            OnCaloriesPerPortionChanged="OnKcalPerPortionChanged"
                            OnPortionsChanged="OnPortionsChanged"
@@ -142,13 +178,54 @@ else
             <div class="save-panel">
                 <button type="button"
                         class="btn btn-primary btn-block"
-                        disabled="@(!CanSave || _isSaving)"
+                        disabled="@(!CanSave || _isSaving || _isDeleting)"
                         @onclick="SaveRecipeAsync">
                     @(_isSaving ? "Saving…" : "Save recipe")
                 </button>
+                @if (RecipeId.HasValue && string.IsNullOrEmpty(_loadError))
+                {
+                    <button type="button"
+                            class="btn btn-secondary btn-block"
+                            disabled="@(_isSaving || _isDeleting)"
+                            @onclick="AskDelete">
+                        @(_isDeleting ? "Deleting…" : "Delete recipe")
+                    </button>
+                }
             </div>
         </div>
     </div>
+
+    <section class="card editor-instructions-card">
+        <h2 class="section-title">Instructions</h2>
+        <p class="section-hint muted">Ordered steps. Type <code>#</code> to link an ingredient or spice — hover the chip for the amount.</p>
+
+        @if (Draft.Recipe.Instructions.Count == 0)
+        {
+            <p class="muted empty-hint">No steps yet.</p>
+        }
+        else
+        {
+            <div class="instruction-list">
+                @for (var i = 0; i < Draft.Recipe.Instructions.Count; i++)
+                {
+                    var step = Draft.Recipe.Instructions[i];
+                    var number = i + 1;
+                    <InstructionStepEditor @key="step.Id"
+                                           Step="step"
+                                           Recipe="Draft.Recipe"
+                                           StepNumber="number"
+                                           OnChanged="OnRecipeChanged"
+                                           OnRemove="@(() => RemoveInstruction(step.Id))" />
+                }
+            </div>
+        }
+
+        <div class="section-footer">
+            <button type="button" class="btn btn-secondary" @onclick="AddInstruction">
+                + Add step
+            </button>
+        </div>
+    </section>
 }
 
 @code {
@@ -157,11 +234,17 @@ else
 
     private string? _loadError;
     private bool _isSaving;
+    private bool _isDeleting;
     private bool _showSaveModal;
     private bool _saveModalIsError;
     private string _saveModalTitle = string.Empty;
     private string _saveModalMessage = string.Empty;
     private bool _showLeaveModal;
+    private bool _showDeleteModal;
+    private bool _showLibraryModal;
+    private string _libraryModalMessage = string.Empty;
+    private IReadOnlyList<IngredientLibraryUpdate> _pendingLibraryUpdates = [];
+    private string _deleteMessage = "This recipe has data. Delete it? This cannot be undone.";
     private string? _pendingNavigation;
     private bool _bypassNavigationGuard;
 
@@ -188,9 +271,9 @@ else
         }
     }
 
-    private decimal? LunchTargetKcal => ActiveEnergy?.LunchKcal;
+    private decimal? MealTargetKcal => ActiveEnergy?.KcalFor(Draft.Recipe.MealType);
 
-    private string? LunchTooltip
+    private string? MealTargetTooltip
     {
         get
         {
@@ -201,7 +284,10 @@ else
                 return null;
             }
 
-            return $"Caloric value of lunch to maintain weight. Formula: maintenance [{NumberFormat.Format(estimate.TdeeKcal)}] × lunch meal split [{FormatFactor(profile.MealSplit.LunchPercent / 100m)}].";
+            var meal = Draft.Recipe.MealType;
+            var mealName = MealTypes.DisplayName(meal).ToLowerInvariant();
+            var split = profile.MealSplit.PercentFor(meal) / 100m;
+            return $"Caloric value of {mealName} to maintain weight. Formula: maintenance [{NumberFormat.Format(estimate.TdeeKcal)}] × {mealName} meal split [{FormatFactor(split)}].";
         }
     }
 
@@ -259,6 +345,15 @@ else
         OnRecipeChanged();
     }
 
+    private void OnMealTypeChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<MealType>(e.Value?.ToString(), out var meal))
+        {
+            Draft.Recipe.MealType = meal;
+            OnRecipeChanged();
+        }
+    }
+
     private void OnRecipeChanged()
     {
         _ = SyncBeforeUnloadAsync();
@@ -292,9 +387,9 @@ else
         StateHasChanged();
     }
 
-    private void UseLunchTarget()
+    private void UseMealTarget()
     {
-        if (LunchTargetKcal is decimal kcal)
+        if (MealTargetKcal is decimal kcal)
         {
             OnKcalPerPortionChanged(kcal);
         }
@@ -305,6 +400,12 @@ else
         Draft.AddIngredient();
         OnRecipeChanged();
     }
+
+    private IReadOnlyList<string> OccupiedIngredientNames(Guid rowId) =>
+        Draft.Recipe.Ingredients.Where(i => i.Id != rowId).Select(i => i.Name).ToList();
+
+    private IReadOnlyList<string> OccupiedSpiceNames(Guid rowId) =>
+        Draft.Recipe.Spices.Where(s => s.Id != rowId).Select(s => s.Name).ToList();
 
     private void RemoveIngredient(Guid id)
     {
@@ -324,7 +425,19 @@ else
         OnRecipeChanged();
     }
 
-    private void UpdateIngredient(IngredientDto ingredient, RecipeItemRowChange change)
+    private void AddInstruction()
+    {
+        Draft.AddInstruction();
+        OnRecipeChanged();
+    }
+
+    private void RemoveInstruction(Guid id)
+    {
+        Draft.RemoveInstruction(id);
+        OnRecipeChanged();
+    }
+
+    private void UpdateIngredient(RecipeIngredientDto ingredient, RecipeItemRowChange change)
     {
         ingredient.Name = change.Name;
         ingredient.Grams = change.Grams ?? 0;
@@ -353,26 +466,104 @@ else
         try
         {
             var result = await RecipeRepository.SaveAsync(Draft.Recipe);
-            ShowSaveModal(
-                result.Success ? "Saved" : "Save failed",
-                result.Message,
-                isError: !result.Success);
-
-            if (result.Success)
+            if (!result.Success)
             {
-                Draft.MarkClean();
-                await SyncBeforeUnloadAsync();
-
-                if (!RecipeId.HasValue)
-                {
-                    _bypassNavigationGuard = true;
-                    Navigation.NavigateTo($"/recipe/{Draft.Recipe.Id}");
-                }
+                ShowSaveModal("Save failed", result.Message, isError: true);
+                return;
             }
+
+            Draft.MarkClean();
+            await SyncBeforeUnloadAsync();
+
+            if (!RecipeId.HasValue)
+            {
+                _bypassNavigationGuard = true;
+                Navigation.NavigateTo($"/recipe/{Draft.Recipe.Id}");
+            }
+
+            await SyncIngredientLibraryAsync();
         }
         finally
         {
             _isSaving = false;
+        }
+    }
+
+    private async Task SyncIngredientLibraryAsync()
+    {
+        var library = await IngredientRepository.GetAllAsync();
+        var sync = IngredientLibrary.ProposeSync(IngredientLibrary.LinesFrom(Draft.Recipe), library);
+
+        foreach (var add in sync.ToAdd)
+        {
+            await IngredientRepository.SaveAsync(add);
+        }
+
+        if (sync.ToUpdate.Count == 0)
+        {
+            ShowSaveModal("Saved", "Recipe saved successfully.", isError: false);
+            return;
+        }
+
+        _pendingLibraryUpdates = sync.ToUpdate;
+        _libraryModalMessage = IngredientLibrary.FormatUpdatePrompt(sync.ToUpdate);
+        _showLibraryModal = true;
+    }
+
+    private async Task ConfirmLibraryUpdatesAsync()
+    {
+        _showLibraryModal = false;
+        foreach (var update in _pendingLibraryUpdates)
+        {
+            var item = update.Existing.Clone();
+            item.CaloriesPer100g = update.NewCaloriesPer100g;
+            await IngredientRepository.SaveAsync(item);
+        }
+
+        _pendingLibraryUpdates = [];
+        ShowSaveModal("Saved", "Recipe and library updated.", isError: false);
+    }
+
+    private void CancelLibraryUpdates()
+    {
+        _showLibraryModal = false;
+        _pendingLibraryUpdates = [];
+        ShowSaveModal("Saved", "Recipe saved successfully.", isError: false);
+    }
+
+    private void AskDelete()
+    {
+        var name = string.IsNullOrWhiteSpace(Draft.Recipe.Name)
+            ? "this recipe"
+            : Draft.Recipe.Name.Trim();
+        _deleteMessage = $"“{name}” has data. Delete it? This cannot be undone.";
+        _showDeleteModal = true;
+    }
+
+    private void CancelDelete() => _showDeleteModal = false;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (RecipeId is not Guid id)
+        {
+            _showDeleteModal = false;
+            return;
+        }
+
+        _showDeleteModal = false;
+        _isDeleting = true;
+
+        try
+        {
+            await RecipeRepository.DeleteAsync(id);
+            _bypassNavigationGuard = true;
+            Draft.MarkClean();
+            await SyncBeforeUnloadAsync();
+            Navigation.NavigateTo("/");
+        }
+        finally
+        {
+            _isDeleting = false;
         }
     }
 

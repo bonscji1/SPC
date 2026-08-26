@@ -18,7 +18,7 @@ A **cookbook** view: list saved recipes, search/filter, open one to view details
 
 ## Deliverables
 
-- [ ] Cookbook page listing all saved recipes (name, ingredient count, optional last used)
+- [ ] Cookbook page listing all saved recipes (name, ingredient count, optional last used) — home already has a paged list + delete; this step adds search, filters, and a dedicated view
 - [ ] Search by recipe or ingredient name
 - [ ] Open recipe → detail view (read-only summary)
 - [ ] Actions: edit, calculate portions, delete (with confirm)

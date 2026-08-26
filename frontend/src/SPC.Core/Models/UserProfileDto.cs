@@ -16,14 +16,6 @@ public enum ActivityLevel
     Custom,
 }
 
-public enum MealType
-{
-    Breakfast,
-    Lunch,
-    Dinner,
-    Snack,
-}
-
 /// <summary>Percent of daily calories per meal. Must sum to 100.</summary>
 public sealed class MealSplitDto
 {

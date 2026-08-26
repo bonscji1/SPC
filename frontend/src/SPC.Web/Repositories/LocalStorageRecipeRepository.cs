@@ -17,6 +17,17 @@ public sealed class LocalStorageRecipeRepository(IBrowserLocalStorage storage) :
         return recipes ?? [];
     }
 
+    public async Task<PagedResult<RecipeDto>> GetPageAsync(
+        int page,
+        int pageSize,
+        MealType? mealType = null,
+        string? nameQuery = null,
+        CancellationToken cancellationToken = default)
+    {
+        var recipes = await GetAllAsync(cancellationToken);
+        return RecipeList.Page(recipes, page, pageSize, mealType, nameQuery);
+    }
+
     public async Task<RecipeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var recipes = await GetAllAsync(cancellationToken);

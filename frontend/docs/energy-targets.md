@@ -2,11 +2,13 @@
 
 How SPC estimates a daily calorie need and a meal budget. Implemented in `SPC.Core` (step 4). Roadmap: `../../plans/step4-human-tracking.md`.
 
-Profiles and recipes are **independent**. A profile never stores recipe ids; a recipe never stores a profile id. The recipe editor may *read* the active profile to suggest lunch kcal.
+Profiles and recipes are **independent**. A profile never stores recipe ids; a recipe never stores a profile id. The recipe editor reads the active profile and the recipe’s meal type to suggest meal kcal.
 
 ## v1 model (locked)
 
-**TDEE = BMR × PAL** (maintenance). Not medical advice; typical REE error is about ±10%.
+**TDEE = BMR × activity factor** (maintenance). Not medical advice; typical REE error is about ±10%.
+
+Uses one coherent stack: **Mifflin–St Jeor** for BMR and **US activity factors** for TDEE (the pairing used by most clinical and fitness calculators). Alternative models (e.g. EFSA Henry + PAL) are listed in [future-improvements.md](./future-improvements.md).
 
 ### BMR — Mifflin–St Jeor (1990), kcal/day
 
@@ -15,18 +17,18 @@ Profiles and recipes are **independent**. A profile never stores recipe ids; a r
 
 Adults roughly 18–80. Sex is the equation coefficient, not identity.
 
-### PAL — EFSA-style (not the 1.2 “sedentary” app factor)
+### Activity factors — US (paired with Mifflin)
 
-| Activity | PAL |
-|----------|-----|
-| Sedentary | 1.4 |
-| Light | 1.5 |
-| Moderate | 1.6 (default) |
-| Active | 1.8 |
-| Very active | 2.0 |
-| Custom | user-entered PAL (1.0–2.4) |
+| Activity | Factor |
+|----------|--------|
+| Sedentary | 1.2 |
+| Light | 1.375 |
+| Moderate | 1.55 (default) |
+| Active | 1.725 |
+| Very active | 1.9 |
+| Custom | user-entered factor (1.0–2.4) |
 
-TDEE and meal kcal are rounded to the nearest 10 kcal. The profile estimate shows BMR, daily maintenance, and kcal for every meal in the split. Cooking still uses **lunch** as the portion suggestion.
+TDEE and meal kcal are rounded to the nearest 10 kcal. The profile estimate shows BMR, daily maintenance, and kcal for every meal in the split. Cooking uses the **recipe’s meal type** (breakfast, lunch, dinner, or snack) with the matching profile percent.
 
 ### Meal split (per profile, editable)
 
@@ -39,15 +41,8 @@ Defaults (must sum to 100%):
 | Dinner | 35 |
 | Snack | 15 |
 
-v1 cooking UI uses **lunch** only: `lunchKcal = TDEE × lunchPercent / 100`. The profile estimate already shows kcal for breakfast, lunch, dinner, and snack. Recipe meal type comes later.
+v1 cooking UI uses the recipe’s `MealType`: `mealKcal = TDEE × matching profile percent / 100`. Existing recipes without a stored type default to **lunch**. The recipe does not store a profile id — it only stores which meal it is; the active profile supplies the percents.
 
-## Later improvements
+## Deferred features
 
-| Issue | When |
-|-------|------|
-| Recipe meal type (breakfast/dinner/snack) | After lunch-only UX is enough |
-| Goal: lose / maintain / gain | Slider off TDEE |
-| Unspecified sex (midpoint intercept −78) | If requested |
-| Body-fat % (Katch–McArdle) | If we collect composition |
-| kJ beside kcal | Locale polish |
-| Henry/Oxford REE (EFSA tables) | Only if we need EU reference-table parity |
+See [future-improvements.md](./future-improvements.md) for goal offsets, EFSA model choice, and other planned work.
