@@ -1,9 +1,10 @@
-# Plan: Step 7 — Recipe adjustment (scaling & what-if)
+# Plan: Step 8 — Recipe adjustment (scaling & what-if)
 
 **Date:** 2026-08-24  
+**Updated:** 2026-08-26  
 **Scope:** frontend  
 **Status:** draft  
-**Depends on:** [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md) (step 6 helpful but not strictly required)  
+**Depends on:** [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md) (step 7 cookbook helpful but not strictly required)  
 **Parent:** [thePlan.md](./thePlan.md)
 
 ## Goal

@@ -13,8 +13,8 @@ Persist recipes and reusable ingredient nutrition (name + kcal/100g) so users do
 
 ## Out of scope
 
-- Cookbook browsing UX polish (step 6) — search, tags, read-only detail
-- External nutrition API (step 8)
+- Cookbook browsing UX polish (step 7) — search, tags, read-only detail
+- External nutrition API (step 9)
 - Auth, multi-user accounts, and device sync (backend phase below)
 
 ## Data to persist
@@ -56,7 +56,7 @@ Swap the DI registration in `SPC.Web/Program.cs`. DTOs, validation, and UI stay 
 |-------|-----|----------|
 | Recipes | `spc.recipes.v1` in localStorage | `ApiRecipeRepository` → REST → PostgreSQL |
 | Profiles | `spc.profiles.v1` | same pattern, per authenticated user |
-| Ingredient library | `spc.ingredients.v1` | shared (or per-user overlay) table; later step 8 fills kcal from an API |
+| Ingredient library | `spc.ingredients.v1` | shared (or per-user overlay) table; later step 9 fills kcal from an API |
 | List reads | `GetPageAsync(page, pageSize)` slices in memory | `LIMIT`/`OFFSET` or keyset; same method signature |
 | Auth | none | required before multi-device / sharing |
 
@@ -101,7 +101,7 @@ Suggested first backend slice: the **same DTOs** over REST, `ApiRecipeRepository
 - Show after one character; cap at 8 matches (prefix, word prefix, or query starts with the name so `onions` still lists `onion`).
 - **First match is highlighted.** Enter selects it. Arrow keys move; click selects. Selection writes the canonical name and fills kcal. Foods already used on **other rows of the same list** (other ingredients, or other spices) are omitted; the row being edited can still match itself.
 - Tab, Escape, or moving to grams **dismisses without selecting**. Typing alone does not fill kcal.
-- When `SearchAsync` is served over HTTP (backend or step 8), debounce **200–250 ms** and show a spinner only if the request is still in flight. Do not add that wait while search is local. See `frontend/docs/architecture.md`.
+- When `SearchAsync` is served over HTTP (backend or step 9), debounce **200–250 ms** and show a spinner only if the request is still in flight. Do not add that wait while search is local. See `frontend/docs/architecture.md`.
 
 **On recipe save:**
 
@@ -149,4 +149,4 @@ Suggested first backend slice: the **same DTOs** over REST, `ApiRecipeRepository
 - Backend now vs. stay on localStorage — **stay on localStorage for this step**; backend when the criteria above are met
 - Recipe versioning on save — `updatedAt` on `RecipeDto` exists; formal migration story TBD (key bump)
 - Ingredient library: one global list vs. per-user when auth arrives — likely shared canonical foods
-- Home sort: newest `updatedAt` first, then name — revisit in step 6 if cookbook needs other sorts
+- Home sort: newest `updatedAt` first, then name — revisit in step 7 if cookbook needs other sorts

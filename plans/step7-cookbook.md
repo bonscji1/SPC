@@ -1,6 +1,7 @@
-# Plan: Step 6 — Cookbook
+# Plan: Step 7 — Cookbook
 
 **Date:** 2026-08-24  
+**Updated:** 2026-08-26  
 **Scope:** frontend (+ backend if step 5 uses one)  
 **Status:** draft  
 **Depends on:** [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md)  
@@ -12,7 +13,7 @@ A **cookbook** view: list saved recipes, search/filter, open one to view details
 
 ## Out of scope
 
-- Recipe scaling / what-if (step 7)
+- Recipe scaling / what-if (step 8)
 - Sharing recipes with other users
 - Print/export (nice-to-have later)
 
@@ -26,7 +27,7 @@ A **cookbook** view: list saved recipes, search/filter, open one to view details
 
 ## UX notes
 
-- This is the “home” for returning users — consider making it the default route after step 6.
+- This is the “home” for returning users — consider making it the default route after step 7.
 - Quick path: cookbook → select recipe → meal/profile → see portions.
 
 ## Acceptance criteria

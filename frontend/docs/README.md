@@ -12,7 +12,17 @@ Also read `../../docs/README.md` for cross-cutting concerns.
 | Core library | `src/SPC.Core/` | DTOs, services, repository interfaces |
 | Tests | `src/SPC.Core.Tests/` | xUnit; Core logic (portions, energy targets) |
 
-## Local development
+## Run the published app
+
+From the **repository root** (see the root `README.md`):
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8080
+
+## Local development (SDK)
 
 ```bash
 cd frontend

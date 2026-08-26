@@ -30,12 +30,16 @@ Run from `frontend/`:
 
 Dev URL (default): http://localhost:5180
 
-Requires [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (see `global.json`).
+To run the **published** stack (repo root): `docker compose up --build` → http://localhost:8080. See the root `README.md`.
+
+Requires [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (see `global.json`) for the commands above.
 
 ## Project layout
 
 ```
 frontend/
+├── Dockerfile
+├── nginx.conf
 ├── SPC.sln
 ├── src/
 │   ├── SPC.Core/           # Models, Services, Repositories

@@ -14,8 +14,8 @@ Let the user define a recipe with a name and a list of ingredients, each with am
 ## Out of scope
 
 - Portion calculations (step 3)
-- Nutrition API lookup (step 8)
-- Saving to database / cookbook (steps 5–6)
+- Nutrition API lookup (step 9)
+- Saving to database / cookbook (steps 5 and 7)
 
 ## Data model (initial)
 
@@ -61,7 +61,7 @@ Example ingredient row: **carrot — 200 g — 41 kcal/100 g**
 
 ## Future hooks
 
-- Ingredient name autocomplete (step 8)
+- Ingredient name autocomplete (step 9)
 - Import from photo (aspirational)
 - Reuse saved ingredient nutrition from step 5
 

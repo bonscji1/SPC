@@ -9,6 +9,7 @@ SPC is a **monorepo** with a frontend app today and a backend added when localSt
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  SPC (repo root)                                        │
+│  ├── docker-compose.yml  Orchestrates services (step 6) │
 │  ├── docs/           Cross-cutting documentation        │
 │  ├── plans/          Implementation plans               │
 │  ├── frontend/       Blazor WASM app (active)           │
@@ -53,6 +54,20 @@ When introduced, the backend will:
 
 If the backend is **Go**, DTOs in Core become the API contract; generate or hand-map clients in the Web project.
 
+## Deployment (step 6)
+
+Repo-root **Compose** orchestrates the stack. Each subproject owns its **Dockerfile**. Run from the repo root:
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8080 (host **8080** → nginx **80** in the frontend image).
+
+Blazor WASM publishes to static files, so the frontend image is **nginx**, not an ASP.NET runtime. That nginx is the public entry. When a backend exists, proxy `/api` to it on the compose network (same origin, no CORS). Postgres stays internal.
+
+See [plans/step6-deployments.md](../plans/step6-deployments.md) and the root `README.md`.
+
 ## Data flow (today)
 
 ```
@@ -77,3 +92,5 @@ Persistence (step 5 prototype): `RecipeDraftService` → `IRecipeRepository` →
 | Energy targets (BMR / TDEE) | `frontend/docs/energy-targets.md` |
 | Agent rules (shared) | `AGENTS.md` |
 | Implementation roadmap | `plans/thePlan.md` |
+| Run the stack | Root `README.md` (`docker compose up --build`) |
+| Deployment (compose) | `plans/step6-deployments.md` |

@@ -11,9 +11,9 @@ Agents and contributors working in a single subproject should read this folder *
 | Document | Status | Description |
 |----------|--------|-------------|
 | [Architecture overview](./architecture.md) | done | Monorepo layout, DTO/repository principles |
-| _Development setup_ | partial | See frontend `README.md` below |
+| _Development setup_ | done | Root `README.md`: `docker compose up --build` → http://localhost:8080 |
 | _API contract_ | TBD | How frontend and backend communicate |
-| _Deployment_ | TBD | Environments, release process |
+| _Deployment_ | done | Repo-root Compose + frontend image; see [step 6](../plans/step6-deployments.md) |
 
 ## Subproject documentation
 

@@ -1,6 +1,7 @@
-# Plan: Step 8 — Ingredient nutrition API
+# Plan: Step 9 — Ingredient nutrition API
 
 **Date:** 2026-08-24  
+**Updated:** 2026-08-26  
 **Scope:** both  
 **Status:** draft  
 **Depends on:** [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md)  

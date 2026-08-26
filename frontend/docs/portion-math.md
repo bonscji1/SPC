@@ -70,7 +70,7 @@ Not in v1. Logged so we do not pretend the calorie sum is lab-accurate.
 | Fat left in the pan, or oil absorbed in frying | Calories leave or enter; water-only yield misses it | Optional “oil used vs discarded”; not needed for boiled/stewed dishes |
 | Discarded cooking liquid (pasta water, marinade) | Some starch/salt/kcal leave the dish | User already omits discarded water as an ingredient; call out in help text if it comes up |
 | Alcohol | Some ethanol (and its kcal) evaporates | If we add alcohol as a nutrient |
-| Dual-column packaging (as sold vs as prepared) | Easy to copy the prepared column | Hint on the kcal field; step 8 can pick the as-sold entry |
+| Dual-column packaging (as sold vs as prepared) | Easy to copy the prepared column | Hint on the kcal field; step 9 can pick the as-sold entry |
 | Leftover logging by cooked grams | Need cooked density, not dry pack kcal | Falls out of yield math; add a “I ate X g of the cooked dish” path when we log meals |
 | Vitamin/mineral retention (EuroFIR / USDA) | Heat and leaching; **not** relevant to calories/macros | Only if we show micronutrients |
 | Persist cooked weight / last portion target with the recipe | Convenience | After step 5, if the same dish is cooked often |

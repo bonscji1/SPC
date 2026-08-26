@@ -8,6 +8,7 @@ Smart Pig's Cookbook (SPC) is a monorepo with separate **frontend** and **backen
 SPC/
 ├── AGENTS.md          # Shared agent rules (this file)
 ├── CLAUDE.md          # Claude-specific entry point
+├── docker-compose.yml # Stack: frontend now; backend/db later
 ├── docs/              # Cross-cutting documentation
 ├── plans/             # Implementation plans (created before larger work)
 ├── frontend/          # Frontend application
@@ -50,9 +51,12 @@ SPC/
 
 ## Build and test
 
-<!-- Add shared commands once tooling is chosen (e.g. make, task runners, CI scripts) -->
+From the repository root:
 
-_TBD — document root-level build, test, and lint commands here._
+| Action | Command |
+|--------|---------|
+| Run the stack | `docker compose up --build` → http://localhost:8080 |
+| Frontend tests | `dotnet test` in `frontend/` (`frontend/AGENTS.md`) |
 
 ## Plans
 

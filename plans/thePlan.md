@@ -3,7 +3,7 @@
 **Date:** 2026-08-24  
 **Updated:** 2026-08-26  
 **Scope:** both (frontend-first; backend when persistence/API is needed)  
-**Status:** in progress — steps 1–5 done; next is cookbook (step 6) or scaling (step 7)
+**Status:** in progress — steps 1–6 done; next is cookbook (step 7) or scaling (step 8)
 
 ## Vision
 
@@ -34,9 +34,10 @@ A recipe and portion calculator for people who cook and care about calories with
 | 3 | Compute dish totals; portions ↔ kcal/portion; optional cooked yield | **done** | [step3-compute-portions.md](./step3-compute-portions.md) |
 | 4 | Derive lunch kcal from selectable person profiles (meal split per person) | **done** | [step4-human-tracking.md](./step4-human-tracking.md) |
 | 5 | Persist recipes and ingredient nutrition data | **done** — localStorage; backend later | [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md) |
-| 6 | Cookbook — browse and open saved recipes | draft (home has a simple saved-recipe list) | [step6-cookbook.md](./step6-cookbook.md) |
-| 7 | Recipe scaling and what-if adjustments (portions, add/remove ingredient) | draft | [step7-recipe-adjustment.md](./step7-recipe-adjustment.md) |
-| 8 | Automatic ingredient nutrition lookup (API) | draft | [step8-ingredient-nutrition-api.md](./step8-ingredient-nutrition-api.md) |
+| 6 | Deployments — containerize frontend; repo-level compose | **done** | [step6-deployments.md](./step6-deployments.md) |
+| 7 | Cookbook — browse and open saved recipes | draft (home has a simple saved-recipe list) | [step7-cookbook.md](./step7-cookbook.md) |
+| 8 | Recipe scaling and what-if adjustments (portions, add/remove ingredient) | draft | [step8-recipe-adjustment.md](./step8-recipe-adjustment.md) |
+| 9 | Automatic ingredient nutrition lookup (API) | draft | [step9-ingredient-nutrition-api.md](./step9-ingredient-nutrition-api.md) |
 
 ### Future / aspirational (not scheduled)
 
@@ -51,16 +52,17 @@ A recipe and portion calculator for people who cook and care about calories with
 
 ```
 step1-init-fe
+    ├── step6-deployments          # compose/images; independent of product steps after 1
     └── step2-create-recipe
             └── step3-compute-portions
                     └── step4-human-tracking
                             └── step5-save-recipes-and-ingredients
-                                    ├── step6-cookbook
-                                    └── step7-recipe-adjustment
-                                            └── step8-ingredient-nutrition-api
+                                    ├── step7-cookbook
+                                    └── step8-recipe-adjustment
+                                            └── step9-ingredient-nutrition-api
 ```
 
-Steps 6 and 7 can be reordered after step 5 depending on priority.
+Steps 6 (deployments), 7 (cookbook), and 8 (scaling) can be reordered after step 5 depending on priority. Deployments only needs a publishable frontend (step 1).
 
 ## How to use these plans
 
@@ -72,5 +74,5 @@ Steps 6 and 7 can be reordered after step 5 depending on priority.
 ## Open questions (cross-cutting)
 
 - When do we introduce a backend vs. localStorage-only persistence? **Step 5 is done on localStorage.** Real app: HTTP API + PostgreSQL behind the same repository interfaces; see [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md).
-- Which nutrition API (if any) is viable for step 8 — licensing, coverage, Czech/EU foods?
+- Which nutrition API (if any) is viable for step 9 — licensing, coverage, Czech/EU foods?
 - ~~Exact formulas for TDEE / meal calorie split~~ — decided: Mifflin–St Jeor × US activity factors; see `frontend/docs/energy-targets.md`.
