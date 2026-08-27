@@ -3,7 +3,7 @@
 **Date:** 2026-08-24  
 **Updated:** 2026-08-27  
 **Scope:** both (frontend-first; backend when persistence/API is needed)  
-**Status:** in progress — steps 1–8 done; next product step is nutrition API (step 9). Identity (step 10) and backend (step 11) are drafts for multi-user scale.
+**Status:** in progress — steps 1–8 done; next product step is nutrition API (step 9). Backend (step 10) and login UI (step 11) are drafts for multi-user scale.
 
 ## Vision
 
@@ -38,8 +38,8 @@ A recipe and portion calculator for people who cook and care about calories with
 | 7 | Cookbook — browse and open saved recipes | **done** — Home list; no extra route | [step7-cookbook.md](./step7-cookbook.md) |
 | 8 | Recipe scaling, variations, and what-if | **done** | [step8-recipe-adjustment.md](./step8-recipe-adjustment.md) |
 | 9 | Automatic ingredient nutrition lookup (API) | draft | [step9-ingredient-nutrition-api.md](./step9-ingredient-nutrition-api.md) |
-| 10 | Login user — account identity, dummy default until API | draft | [step10-login-user.md](./step10-login-user.md) |
-| 11 | Backend + database — persist per-user data; Bearer auth | draft — discuss DB first | [step11-backend.md](./step11-backend.md) |
+| 10 | Backend + database — persist per-user data; Bearer on the API | draft — decisions locked | [step10-backend.md](./step10-backend.md) |
+| 11 | Login user — Blazor shell against the real API | draft | [step11-login-user.md](./step11-login-user.md) |
 
 ### Future / aspirational (not scheduled)
 
@@ -61,11 +61,11 @@ step1-init-fe
                                     ├── step7-cookbook
                                     ├── step8-recipe-adjustment
                                     │       └── step9-ingredient-nutrition-api
-                                    └── step10-login-user
-                                            └── step11-backend   # also uses step 6 compose slots
+                                    └── step10-backend           # discuss DB first; also uses step 6 compose slots
+                                            └── step11-login-user   # Blazor login + Api* repos; no fake local auth
 ```
 
-Step 9 (nutrition API) is the next **product** step and does not wait on login. Steps 10–11 are **infrastructure** drafts: a dummy login account first, then a real API. Cookbook browsing lives on Home (step 7). Deployments (step 6) only needed a publishable frontend (step 1); compose already has room for `backend` + `db`.
+Step 9 (nutrition API) is the next **product** step and does not wait on the backend. Steps 10–11 are **infrastructure** drafts: API + database first (seeded users, Bearer on the wire), then the Blazor login shell. Cookbook browsing lives on Home (step 7). Deployments (step 6) only needed a publishable frontend (step 1); compose already has room for `backend` + `db`.
 
 ## How to use these plans
 
@@ -76,6 +76,6 @@ Step 9 (nutrition API) is the next **product** step and does not wait on login. 
 
 ## Open questions (cross-cutting)
 
-- When do we introduce a backend vs. localStorage-only persistence? **Step 5 is done on localStorage.** Identity first ([step 10](./step10-login-user.md)), then API + DB ([step 11](./step11-backend.md)). Database engine and schema are **not** chosen yet — discuss before implementing step 11.
+- When do we introduce a backend vs. localStorage-only persistence? **Step 5 is done on localStorage.** API + DB is [step 10](./step10-backend.md) (C#, Postgres, Minimal APIs, JWT, one baked-in `spc` user). Blazor login is [step 11](./step11-login-user.md).
 - Which nutrition API (if any) is viable for step 9 — licensing, coverage, Czech/EU foods?
 - ~~Exact formulas for TDEE / meal calorie split~~ — decided: Mifflin–St Jeor × US activity factors; see `frontend/docs/energy-targets.md`.

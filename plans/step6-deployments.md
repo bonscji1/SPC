@@ -64,7 +64,7 @@ SPC/
 
 Host port **8080** (http://localhost:8080) maps to nginx **80** in the image.
 
-When a backend is added: no public backend port — nginx proxies `/api`. The database stays internal (engine chosen in [step 11](./step11-backend.md)), credentials via `.env` (gitignored), named volume for data. Do not add those services until they exist.
+When a backend is added: no public backend port — nginx proxies `/api`. The database stays internal (engine chosen in [step 10](./step10-backend.md)), credentials via `.env` (gitignored), named volume for data. Do not add those services until they exist.
 
 ## Implementation steps
 

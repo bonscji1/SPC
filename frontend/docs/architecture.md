@@ -49,9 +49,9 @@ src/SPC.Web/
 
 `RecipeDraftService` holds the current edit. **Save** writes through `IRecipeRepository` (not directly to localStorage).
 
-### Identity vs calorie profile (planned — step 10)
+### Identity vs calorie profile (planned — step 11)
 
-A **login account** (username + password, session bearer token) is not `UserProfileDto`. Profiles stay the household bodies used for energy targets. After step 10, recipes, the ingredient library, and profiles are scoped to the signed-in account. Until the backend exists, one dummy default user is seeded; see [plans/step10-login-user.md](../../plans/step10-login-user.md).
+A **login account** (username + password sent to the API, Bearer token in the session) is not `UserProfileDto`. Profiles stay the household bodies used for energy targets. After step 11, recipes, the ingredient library, and profiles load from the signed-in account via `Api*` repositories. See [plans/step11-login-user.md](../../plans/step11-login-user.md). Logout must reset `RecipeDraftService` (singleton draft), `ActiveProfileService` (including `spc.activeProfileId.v1`), and the in-memory ingredient library cache.
 
 ### Unsaved changes
 
@@ -68,11 +68,11 @@ Guards when dirty:
 
 ```
 UI → IRecipeRepository.GetPageAsync / GetByFamilyIdAsync / Save / Delete / DeleteFamilyAsync
-        → LocalStorageRecipeRepository → IBrowserLocalStorage   (now; per-account keys after step 10)
-        → ApiRecipeRepository          → HTTP + Bearer + DB     (step 11)
+        → LocalStorageRecipeRepository → IBrowserLocalStorage   (now)
+        → ApiRecipeRepository          → HTTP + Bearer + DB     (step 11; API is step 10)
 ```
 
-Swap the DI registration in `Program.cs` to move to the backend. DTOs and UI stay unchanged. Database choice is a step 11 discussion, not a frontend decision.
+Swap the DI registration in `Program.cs` to move to the backend. DTOs and UI stay unchanged. Database choice is a step 10 discussion, not a frontend decision.
 
 - **Recipe line:** `RecipeIngredientDto` (name, grams used, kcal/100 g)
 - **Nutrition library:** `IngredientDto` (canonical name, kcal/100 g) in `spc.ingredients.v1`. Shared by ingredient and spice rows. Copy-on-use: picking fills the row; saving a recipe adds new foods and may ask before changing library kcal. Existing recipes are not rewritten.
@@ -119,6 +119,6 @@ Do **not** treat a one-off control as a global pattern. Activity options with ev
 - Portion math: `portion-math.md`
 - Energy targets: `energy-targets.md`
 - Roadmap: `../../plans/thePlan.md`
-- Login accounts: `../../plans/step10-login-user.md`
-- Backend + database: `../../plans/step11-backend.md`
+- Login accounts: `../../plans/step11-login-user.md`
+- Backend + database: `../../plans/step10-backend.md`
 - Agent rules: `../AGENTS.md`

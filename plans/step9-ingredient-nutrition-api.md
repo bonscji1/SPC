@@ -41,4 +41,4 @@ Reduce manual entry of **calories per 100 g** by looking up ingredients from an 
 ## Open questions
 
 - Czech/local food naming — multilingual search?
-- Backend required vs. direct browser calls (CORS, API key exposure)? If keys must stay off the client, wait for or land with [step 11](./step11-backend.md).
+- Backend required vs. direct browser calls (CORS, API key exposure)? If keys must stay off the client, wait for or land with [step 10](./step10-backend.md).

@@ -47,18 +47,18 @@ UI / components
         → IRecipeRepository, IIngredientRepository, IUserProfileRepository
             → LocalStorage*Repository (now — prototype)
             → Api*Repository (real app)
-                → HTTP → backend → database (step 11)
+                → HTTP → backend → database (step 10)
 ```
 
 Swap the DI registration in `SPC.Web/Program.cs`. DTOs, validation, and UI stay unchanged.
 
 | Layer | Now | Real app |
 |-------|-----|----------|
-| Recipes | `spc.recipes.v1` in localStorage | `ApiRecipeRepository` → REST → database (step 11) |
+| Recipes | `spc.recipes.v1` in localStorage | `ApiRecipeRepository` → REST → database (step 11 uses API from step 10) |
 | Profiles | `spc.profiles.v1` | same pattern, per authenticated user |
 | Ingredient library | `spc.ingredients.v1` | per-user table (step 10); later optional shared catalog; step 9 may fill kcal |
 | List reads | `GetPageAsync(page, pageSize)` slices in memory | `LIMIT`/`OFFSET` or keyset; same method signature |
-| Auth | none | dummy account in step 10; real Bearer tokens in step 11 |
+| Auth | none | login endpoint + Bearer in step 10; Blazor login UI in step 11 |
 
 **Paged reads are already on the repository** (`IRecipeRepository.GetPageAsync`, `IIngredientRepository.GetPageAsync`, page sizes **10**, **25**, and **50**) so the backend can implement paging without a UI rewrite. Allowed sizes live in `Paging.PageSizes`.
 
@@ -66,14 +66,14 @@ Swap the DI registration in `SPC.Web/Program.cs`. DTOs, validation, and UI stay 
 
 Stay on localStorage while we finish this step’s library UX and while a single-browser prototype is enough.
 
-Introduce the API + database ([step 11](./step11-backend.md)) when any of these become true (identity first: [step 10](./step10-login-user.md)):
+Introduce the API + database ([step 10](./step10-backend.md)) when any of these become true (Blazor login after that: [step 11](./step11-login-user.md)):
 
 - Users need the same recipes on more than one device
 - We want a shared or curated ingredient library
 - Recipe count or payload size outgrows a JSON blob
 - We need backup, export-to-account, or more than one person on one dataset
 
-Suggested first backend slice: the **same DTOs** over REST, `ApiRecipeRepository` / `ApiUserProfileRepository` / `ApiIngredientRepository`, and an optional one-time **import from localStorage** so prototype data is not stranded. **Auth lands first** as a dummy login account ([step 10](./step10-login-user.md)); the API + database is [step 11](./step11-backend.md). Do not start step 11 until we discuss which database and schema fit.
+Suggested first backend slice: the **same DTOs** over REST, login that issues a Bearer token, and account-scoped recipe/ingredient/profile routes. **API + DB first** ([step 10](./step10-backend.md)); the Blazor login page and `Api*` repositories are [step 11](./step11-login-user.md). Optional one-time **import from localStorage** in step 11 so prototype data is not stranded. Do not start step 10 until we discuss which database and schema fit.
 
 ### Storage format / migration
 
@@ -142,11 +142,11 @@ Suggested first backend slice: the **same DTOs** over REST, `ApiRecipeRepository
 - Library page can add, edit, and delete foods without opening a recipe; changing the library does not rewrite recipes
 - Overwriting kcal on a recipe asks before changing the library; other recipes are unchanged
 - Migration path documented if storage format changes (see Persistence strategy)
-- Repository contracts remain valid when persistence moves to HTTP + database (step 11)
+- Repository contracts remain valid when persistence moves to HTTP + database (steps 10–11)
 
 ## Open questions
 
-- Backend now vs. stay on localStorage — **stay on localStorage for this step**; identity in [step 10](./step10-login-user.md), API in [step 11](./step11-backend.md)
+- Backend now vs. stay on localStorage — **stay on localStorage for this step**; API in [step 10](./step10-backend.md), Blazor login in [step 11](./step11-login-user.md)
 - Recipe versioning on save — `updatedAt` on `RecipeDto` exists; formal migration story TBD (key bump)
 - Ingredient library: one global list vs. per-user when auth arrives — **per-user** (accounts share the database, not the library). A canonical shared catalog can come later beside that.
 - Home sort: newest `updatedAt` first, then name — kept; not revisiting for a separate cookbook

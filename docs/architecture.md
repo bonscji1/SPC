@@ -4,7 +4,7 @@ High-level structure of the Smart Pig's Cookbook monorepo.
 
 ## Overview
 
-SPC is a **monorepo** with a frontend app today. Persistence is browser localStorage (step 5). **Login accounts** (step 10, dummy user until the API exists) prepare per-user recipes and ingredient lists. A **backend + database** (step 11) is added when we need data off the browser; engine and schema are chosen in that step’s discussion, not here. See `plans/thePlan.md`.
+SPC is a **monorepo** with a frontend app today. Persistence is browser localStorage (step 5). A **backend + database** (step 10) is added when we need data off the browser; engine and schema are chosen in that step’s discussion. **Login** (step 11) is the Blazor shell that calls that API with a Bearer token — no dummy local auth. See `plans/thePlan.md`.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -44,28 +44,31 @@ SPC.Web (Blazor WASM)          SPC.Core (class library)
 
 See `frontend/docs/architecture.md` for frontend detail.
 
-## Identity (planned — step 10)
+## Backend (planned — step 10)
 
-**Account** (login user) is not the same as a step 4 **person profile** (BMR / TDEE). The account owns recipes, the ingredient library, and profiles. Until the API exists, one **dummy default user** is seeded; passwords are stored as salt + hash and compared on login. The session holds a bearer token so HTTP can attach `Authorization: Bearer …` later.
-
-See [plans/step10-login-user.md](../plans/step10-login-user.md).
-
-## Backend (planned — step 11)
-
-**Discussion first:** which database(s) and what structure fit this use case. PostgreSQL is a strong candidate from earlier notes; it is not locked. Do not add Compose `backend` / `db` services until that discussion lands.
+**Decided:** C# Minimal APIs, one PostgreSQL, JWT, one baked-in default user (`spc` / `spc`) until a later accounts step. See [plans/step10-backend.md](../plans/step10-backend.md).
 
 When introduced, the backend will:
 
-- Issue the login token; validate Bearer on every API request; scope rows by account id
+- Seed accounts; `POST /api/auth/login` issues a Bearer token (server-side salt + hash)
+- Validate Bearer on every other API request; scope rows by account id
 - Expose REST (or similar) endpoints accepting/returning the **same DTOs** as `SPC.Core`
-- Implement repository interfaces against the chosen store
-- Optionally share `SPC.Core` as a project reference if the backend is C#
+- Implement persistence in PostgreSQL (`account_id` on user-owned rows; JSONB for nested recipe parts)
+- Share `SPC.Core` as a project reference (C# API)
 
-If the backend is **Go**, DTOs in Core become the API contract; generate or hand-map clients in the Web project.
+Go is not in scope.
 
-Users **share the database**, not each other’s recipes or libraries.
+Users **share the database**, not each other’s recipes or libraries. The Blazor app stays on localStorage until step 11.
 
-See [plans/step11-backend.md](../plans/step11-backend.md).
+See [plans/step10-backend.md](../plans/step10-backend.md).
+
+## Identity (planned — step 11)
+
+**Account** (login user) is not the same as a step 4 **person profile** (BMR / TDEE). The account owns recipes, the ingredient library, and profiles.
+
+The UI logs in against the step 10 API, holds the issued Bearer token, and swaps `LocalStorage*` repositories for `Api*`. The ingredient library is loaded once into memory so the name picker stays local. No client-side hashing, dummy tokens, or per-account localStorage keys. Logout must clear `RecipeDraftService`, `ActiveProfileService`, and the ingredient cache.
+
+See [plans/step11-login-user.md](../plans/step11-login-user.md).
 
 ## Deployment (step 6)
 
@@ -77,7 +80,7 @@ docker compose up --build
 
 Open http://localhost:8080 (host **8080** → nginx **80** in the frontend image).
 
-Blazor WASM publishes to static files, so the frontend image is **nginx**, not an ASP.NET runtime. That nginx is the public entry. When a backend exists, proxy `/api` to it on the compose network (same origin, no CORS). The database stays internal (engine chosen in step 11).
+Blazor WASM publishes to static files, so the frontend image is **nginx**, not an ASP.NET runtime. That nginx is the public entry. When a backend exists, proxy `/api` to it on the compose network (same origin, no CORS). **`dotnet watch` is a different origin** (frontend :5180, API elsewhere) — CORS or a local proxy is required; see step 10. The database stays internal (engine chosen in step 10).
 
 See [plans/step6-deployments.md](../plans/step6-deployments.md) and the root `README.md`.
 
@@ -91,7 +94,7 @@ User input → Blazor components → RecipeDraftService (in-memory)
                                RecipeValidator + PortionCalculator (SPC.Core)
 ```
 
-Persistence (step 5 prototype): `RecipeDraftService` → `IRecipeRepository` → localStorage. Nutrition library: `IIngredientRepository` → `spc.ingredients.v1`. Home lists **one row per recipe family** via `GetPageAsync` (10/25/50); variants switch on the recipe editor. Step 10 scopes those stores to the signed-in account. Real app: swap in `Api*Repository` → HTTP + Bearer + database (step 11); same DTOs. `IngredientDto` is the nutrition library (not a recipe line).
+Persistence (step 5 prototype): `RecipeDraftService` → `IRecipeRepository` → localStorage. Nutrition library: `IIngredientRepository` → `spc.ingredients.v1`. Home lists **one row per recipe family** via `GetPageAsync` (10/25/50); variants switch on the recipe editor. Real app: step 10 is the API + DB; step 11 swaps in `Api*Repository` → HTTP + Bearer. Same DTOs. `IngredientDto` is the nutrition library (not a recipe line).
 
 ## Documentation map
 
@@ -105,7 +108,7 @@ Persistence (step 5 prototype): `RecipeDraftService` → `IRecipeRepository` →
 | Energy targets (BMR / TDEE) | `frontend/docs/energy-targets.md` |
 | Agent rules (shared) | `AGENTS.md` |
 | Implementation roadmap | `plans/thePlan.md` |
-| Login / accounts | `plans/step10-login-user.md` |
-| Backend + database | `plans/step11-backend.md` |
+| Login / accounts | `plans/step11-login-user.md` |
+| Backend + database | `plans/step10-backend.md` |
 | Run the stack | Root `README.md` (`docker compose up --build`) |
 | Deployment (compose) | `plans/step6-deployments.md` |

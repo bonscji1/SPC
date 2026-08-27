@@ -12,7 +12,7 @@ Agents and contributors working in a single subproject should read this folder *
 |----------|--------|-------------|
 | [Architecture overview](./architecture.md) | done | Monorepo layout, DTO/repository principles |
 | _Development setup_ | done | Root `README.md`: `docker compose up --build` → http://localhost:8080 |
-| _API contract_ | TBD | How frontend and backend communicate — planned in [step 11](../plans/step11-backend.md); login/Bearer shape in [step 10](../plans/step10-login-user.md) |
+| _API contract_ | TBD | How frontend and backend communicate — API in [step 10](../plans/step10-backend.md); Blazor login/Bearer in [step 11](../plans/step11-login-user.md) |
 | _Deployment_ | done | Repo-root Compose + frontend image; see [step 6](../plans/step6-deployments.md) |
 
 ## Subproject documentation

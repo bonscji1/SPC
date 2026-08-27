@@ -69,6 +69,6 @@ Before substantial features or refactors, create a plan in `plans/` with:
 
 ## Security
 
-- **Accounts** (planned): username + password; store **salt + hash**, never plaintext. Dummy local user until the API exists — [step 10](plans/step10-login-user.md).
-- **API** (planned): backend issues a Bearer token; hashing is server-side — [step 11](plans/step11-backend.md).
-- Do not commit secrets, `.env`, or signing keys.
+- **Accounts** (planned): one default user `spc` / `spc` until a later accounts step; store PasswordHasher output on the server — [step 10](plans/step10-backend.md).
+- **Login UI** (planned): browser sends credentials; backend issues a JWT — [step 11](plans/step11-login-user.md). Do not hash passwords in WASM.
+- Do not commit JWT signing keys or DB passwords. The dummy `spc` pair is documented on purpose.

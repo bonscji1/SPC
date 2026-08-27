@@ -10,11 +10,11 @@ Also read `../../docs/README.md` for cross-cutting concerns.
 
 | Document | Status | Description |
 |----------|--------|-------------|
-| _Stack and tooling_ | TBD | Language, framework, runtime — decide with [step 11](../../plans/step11-backend.md) |
+| _Stack and tooling_ | TBD | Language, framework, runtime — decide with [step 10](../../plans/step10-backend.md) |
 | _Project structure_ | TBD | Modules, layers, package layout |
-| _API design_ | TBD | Endpoints, versioning, errors; Bearer auth from [step 10](../../plans/step10-login-user.md) |
-| _Data layer_ | TBD | Database and schema — **discussion gate** in step 11; do not assume PostgreSQL |
-| _Auth and security_ | TBD | Salted password hashes; token validation |
+| _API design_ | TBD | Endpoints, versioning, errors; Bearer login in this step; Blazor UI in [step 11](../../plans/step11-login-user.md) |
+| _Data layer_ | TBD | PostgreSQL recommended in [step 10](../../plans/step10-backend.md); confirm schema (JSONB recipes) before coding |
+| _Auth and security_ | TBD | Salted password hashes on the server; token validation |
 | _Testing_ | TBD | Unit, integration, contract tests |
 
 ## Agent instructions
