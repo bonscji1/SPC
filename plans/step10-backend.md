@@ -1,8 +1,8 @@
 # Plan: Step 10 — Backend and database
 
 **Date:** 2026-08-27  
-**Scope:** both (API + DB now; Blazor still on localStorage until step 11)  
-**Status:** draft — **decisions locked** (see below). Ready to implement when we start this step.  
+**Scope:** both (API + DB; Blazor wired in step 11)  
+**Status:** **done** — C# Minimal APIs + PostgreSQL. Frontend login and HTTP repos are [step 11](./step11-login-user.md).  
 **Depends on:** [step6-deployments.md](./step6-deployments.md) (compose layout), [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md) (DTO / repository contracts)  
 **Parent:** [thePlan.md](./thePlan.md)  
 **Unlocks:** [step11-login-user.md](./step11-login-user.md)
@@ -218,12 +218,12 @@ Host SDK (dotnet watch :5180) — API is a different origin
 
 ## Deliverables
 
-- [ ] Decisions recorded in `backend/docs/` (C#, Postgres, Minimal APIs, JWT, one default user)
-- [ ] Runnable backend + database via `docker compose up --build`
-- [ ] Login issues a JWT for `spc` / `spc`; other routes reject missing/invalid tokens
-- [ ] Recipes, ingredient library, and profiles persist for that account (hard delete)
-- [ ] CORS / base-URL notes for SDK development
-- [ ] `backend/AGENTS.md` and `backend/docs/` filled in (stack, commands, migrations)
+- [x] Decisions recorded in `backend/docs/` (C#, Postgres, Minimal APIs, JWT, one default user)
+- [x] Runnable backend + database via `docker compose up --build`
+- [x] Login issues a JWT for `spc` / `spc`; other routes reject missing/invalid tokens
+- [x] Recipes, ingredient library, and profiles persist for that account (hard delete)
+- [x] CORS / base-URL notes for SDK development
+- [x] `backend/AGENTS.md` and `backend/docs/` filled in (stack, commands, migrations)
 
 ## Acceptance criteria
 

@@ -4,14 +4,11 @@ using SPC.Core.Repositories;
 namespace SPC.Web.Services;
 
 /// <summary>
-/// Which profile is selected in the UI. Independent of recipes.
+/// Which calorie profile is selected in the UI. Independent of the login account.
+/// In-memory only; the list comes from the API for the signed-in account.
 /// </summary>
-public sealed class ActiveProfileService(
-    IUserProfileRepository profiles,
-    IBrowserLocalStorage storage)
+public sealed class ActiveProfileService(IUserProfileRepository profiles)
 {
-    private const string ActiveIdKey = "spc.activeProfileId.v1";
-
     public IReadOnlyList<UserProfileDto> All { get; private set; } = [];
 
     public UserProfileDto? Active { get; private set; }
@@ -20,12 +17,9 @@ public sealed class ActiveProfileService(
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
+        var previousId = Active?.Id;
         All = await profiles.GetAllAsync(cancellationToken);
-
-        var stored = await storage.GetItemAsync<string>(ActiveIdKey, cancellationToken);
-        Guid? activeId = Guid.TryParse(stored, out var parsed) ? parsed : null;
-        Active = activeId is Guid id ? All.FirstOrDefault(p => p.Id == id) : null;
-
+        Active = previousId is Guid id ? All.FirstOrDefault(p => p.Id == id) : null;
         Changed?.Invoke();
     }
 
@@ -33,27 +27,17 @@ public sealed class ActiveProfileService(
     {
         await InitializeAsync(cancellationToken);
 
-        if (id is Guid selected)
-        {
-            Active = All.FirstOrDefault(p => p.Id == selected);
-            if (Active is not null)
-            {
-                await storage.SetItemAsync(ActiveIdKey, selected.ToString(), cancellationToken);
-            }
-            else
-            {
-                await storage.RemoveItemAsync(ActiveIdKey, cancellationToken);
-            }
-        }
-        else
-        {
-            Active = null;
-            await storage.RemoveItemAsync(ActiveIdKey, cancellationToken);
-        }
-
+        Active = id is Guid selected ? All.FirstOrDefault(p => p.Id == selected) : null;
         Changed?.Invoke();
     }
 
     public async Task RefreshAsync(CancellationToken cancellationToken = default) =>
         await InitializeAsync(cancellationToken);
+
+    public void Clear()
+    {
+        All = [];
+        Active = null;
+        Changed?.Invoke();
+    }
 }

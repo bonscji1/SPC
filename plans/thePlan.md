@@ -3,7 +3,7 @@
 **Date:** 2026-08-24  
 **Updated:** 2026-08-27  
 **Scope:** both (frontend-first; backend when persistence/API is needed)  
-**Status:** in progress — steps 1–8 done; next product step is nutrition API (step 9). Backend (step 10) and login UI (step 11) are drafts for multi-user scale.
+**Status:** in progress — steps 1–8, 10, and 11 done; next product step is nutrition API (step 9).
 
 ## Vision
 
@@ -38,8 +38,8 @@ A recipe and portion calculator for people who cook and care about calories with
 | 7 | Cookbook — browse and open saved recipes | **done** — Home list; no extra route | [step7-cookbook.md](./step7-cookbook.md) |
 | 8 | Recipe scaling, variations, and what-if | **done** | [step8-recipe-adjustment.md](./step8-recipe-adjustment.md) |
 | 9 | Automatic ingredient nutrition lookup (API) | draft | [step9-ingredient-nutrition-api.md](./step9-ingredient-nutrition-api.md) |
-| 10 | Backend + database — persist per-user data; Bearer on the API | draft — decisions locked | [step10-backend.md](./step10-backend.md) |
-| 11 | Login user — Blazor shell against the real API | draft | [step11-login-user.md](./step11-login-user.md) |
+| 10 | Backend + database — persist per-user data; Bearer on the API | **done** | [step10-backend.md](./step10-backend.md) |
+| 11 | Login user — Blazor shell against the real API | **done** | [step11-login-user.md](./step11-login-user.md) |
 
 ### Future / aspirational (not scheduled)
 
@@ -76,6 +76,6 @@ Step 9 (nutrition API) is the next **product** step and does not wait on the bac
 
 ## Open questions (cross-cutting)
 
-- When do we introduce a backend vs. localStorage-only persistence? **Step 5 is done on localStorage.** API + DB is [step 10](./step10-backend.md) (C#, Postgres, Minimal APIs, JWT, one baked-in `spc` user). Blazor login is [step 11](./step11-login-user.md).
+- When do we introduce a backend vs. localStorage-only persistence? **Step 5 was the localStorage prototype.** API + DB is [step 10](./step10-backend.md). Blazor login + HTTP repositories is [step 11](./step11-login-user.md) (**done**).
 - Which nutrition API (if any) is viable for step 9 — licensing, coverage, Czech/EU foods?
 - ~~Exact formulas for TDEE / meal calorie split~~ — decided: Mifflin–St Jeor × US activity factors; see `frontend/docs/energy-targets.md`.

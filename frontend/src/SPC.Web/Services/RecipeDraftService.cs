@@ -39,6 +39,15 @@ public sealed class RecipeDraftService
 
     public void MarkClean() => _baseline = Recipe.Clone();
 
+    /// <summary>Empty draft after login or logout so the next account never sees the last recipe.</summary>
+    public void Clear()
+    {
+        Recipe = new RecipeDto();
+        Recipe.FamilyId = Recipe.Id;
+        ResetPortionSession();
+        MarkClean();
+    }
+
     public void ApplyPersistedVariantLabel(string label)
     {
         var normalized = RecipeDto.NormalizeVariantLabel(label);

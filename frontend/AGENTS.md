@@ -50,9 +50,9 @@ frontend/
 ## Conventions
 
 - DTOs and calculation logic live in `SPC.Core`
-- UI components bind and call services; **no direct `localStorage`, IndexedDB, or `fetch` in components**
-- Repository interfaces in `SPC.Core/Repositories/`; implementations in `SPC.Web/Repositories/`
-- To add persistence: define or use an `I*Repository` in Core, implement once in Web (e.g. `LocalStorageRecipeRepository`), register in `Program.cs`. Later add `ApiRecipeRepository` without changing UI.
+- Repository interfaces in `SPC.Core/Repositories/`; implementations in `SPC.Web/Repositories/` (HTTP + Bearer)
+- To add persistence: define or use an `I*Repository` in Core, implement once in Web (`Api*Repository` or a memory cache in front of HTTP), register in `Program.cs`.
+- UI components bind and call services; **no direct `localStorage`, IndexedDB, or `fetch` in components** (auth token I/O stays in `IAuthService`)
 - Tests target `SPC.Core` first; add UI tests only when valuable
 - Display quantities with `NumberFormat` (whole numbers bare; otherwise exactly two decimals). See `docs/architecture.md`
 - **UI:** follow `docs/ui.md` (type scale, InfoTip) and **Product preferences** in `docs/architecture.md` (sections, visible caveats). Do not invent new font sizes.
@@ -69,4 +69,4 @@ frontend/
 | Future improvements | `docs/future-improvements.md` |
 | Recipe instructions | `docs/recipe-instructions.md` |
 | Shared docs | `../docs/README.md` |
-| Implementation plans | `../plans/thePlan.md` (backend: step 10; login: step 11) |
+| Implementation plans | `../plans/thePlan.md` (backend: step 10 done; login: step 11 done) |

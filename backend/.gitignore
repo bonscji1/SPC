@@ -1,12 +1,14 @@
-# Backend build outputs and dependencies
-# Uncomment or extend once the stack is chosen.
+# Build
+bin/
+obj/
+out/
+TestResults/
 
-# __pycache__/
-# *.py[cod]
-# .venv/
-# venv/
-# .pytest_cache/
-# .mypy_cache/
-# target/          # Rust
-# bin/
-# vendor/          # Go
+# User-specific
+*.user
+*.suo
+.vs/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,6 +1,43 @@
+# Full stack: nginx (UI + /api proxy) + API + Postgres.
+# From the repo root: docker compose up --build → http://localhost:8080
 services:
   frontend:
     build: ./frontend
     ports:
       - "8080:80"
+    depends_on:
+      - backend
     restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      ConnectionStrings__Default: Host=db;Database=spc;Username=spc;Password=${POSTGRES_PASSWORD:-spc-dev-password}
+      Jwt__Key: ${JWT_KEY:-dev-only-change-me-to-32-chars-min}
+      Jwt__Issuer: spc
+      Jwt__Audience: spc
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: spc
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spc-dev-password}
+      POSTGRES_DB: spc
+    volumes:
+      - spc-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spc -d spc"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+
+volumes:
+  spc-pgdata:

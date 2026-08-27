@@ -14,7 +14,7 @@ Stored on `RecipeDto.Instructions` as ordered steps of text + link tokens (`SPC.
 
 ## Persistence
 
-Saved with the recipe in localStorage (`spc.recipes.v1`). Each step stores TipTap JSON (`editorJson`) plus token chips. Older recipes without `instructions` load as no steps.
+Saved with the recipe via `IRecipeRepository` (HTTP API). Each step stores TipTap JSON (`editorJson`) plus token chips. Older recipes without `instructions` load as no steps.
 
 Instructions are **not** shown in the recipe summary panel (by design).
 

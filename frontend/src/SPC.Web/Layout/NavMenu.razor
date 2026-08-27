@@ -1,7 +1,10 @@
+@using SPC.Core.Auth
 @using SPC.Core.Models
 @using SPC.Web.Services
 @implements IDisposable
 @inject ActiveProfileService Profiles
+@inject AuthSession Session
+@inject IAuthService Auth
 @inject NavigationManager Navigation
 
 <nav class="nav-menu">
@@ -20,51 +23,58 @@
         </ul>
     </div>
 
-    <div class="nav-profile">
-        <button type="button"
-                class="btn btn-secondary nav-profile-button"
-                @onclick="ToggleMenu"
-                aria-expanded="@_menuOpen"
-                aria-haspopup="true">
-            @(Profiles.Active?.Name ?? "Profile")
+    <div class="nav-end">
+        <span class="nav-username">@Session.Account?.Username</span>
+        <button type="button" class="btn btn-secondary nav-logout" @onclick="LogoutAsync">
+            Log out
         </button>
 
-        @if (_menuOpen)
-        {
-            <div class="profile-menu-backdrop" @onclick="CloseMenu"></div>
-            <div class="profile-menu card" role="menu">
-                <button type="button"
-                        class="profile-menu-item @(_noneSelected ? "is-active" : null)"
-                        role="menuitem"
-                        @onclick="SelectNoneAsync">
-                    No profile
-                </button>
+        <div class="nav-profile">
+            <button type="button"
+                    class="btn btn-secondary nav-profile-button"
+                    @onclick="ToggleMenu"
+                    aria-expanded="@_menuOpen"
+                    aria-haspopup="true">
+                @(Profiles.Active?.Name ?? "Profile")
+            </button>
 
-                @foreach (var profile in Profiles.All)
-                {
-                    <div class="profile-menu-row">
-                        <button type="button"
-                                class="profile-menu-item @(profile.Id == Profiles.Active?.Id ? "is-active" : null)"
-                                role="menuitem"
-                                @onclick="() => SelectProfileAsync(profile.Id)">
-                            @profile.Name
-                        </button>
-                        <button type="button"
-                                class="profile-menu-edit"
-                                @onclick="() => EditProfile(profile.Id)">
-                            Edit
-                        </button>
-                    </div>
-                }
+            @if (_menuOpen)
+            {
+                <div class="profile-menu-backdrop" @onclick="CloseMenu"></div>
+                <div class="profile-menu card" role="menu">
+                    <button type="button"
+                            class="profile-menu-item @(_noneSelected ? "is-active" : null)"
+                            role="menuitem"
+                            @onclick="SelectNoneAsync">
+                        No profile
+                    </button>
 
-                <button type="button"
-                        class="profile-menu-item profile-menu-add"
-                        role="menuitem"
-                        @onclick="AddProfile">
-                    + Add profile
-                </button>
-            </div>
-        }
+                    @foreach (var profile in Profiles.All)
+                    {
+                        <div class="profile-menu-row">
+                            <button type="button"
+                                    class="profile-menu-item @(profile.Id == Profiles.Active?.Id ? "is-active" : null)"
+                                    role="menuitem"
+                                    @onclick="() => SelectProfileAsync(profile.Id)">
+                                @profile.Name
+                            </button>
+                            <button type="button"
+                                    class="profile-menu-edit"
+                                    @onclick="() => EditProfile(profile.Id)">
+                                Edit
+                            </button>
+                        </div>
+                    }
+
+                    <button type="button"
+                            class="profile-menu-item profile-menu-add"
+                            role="menuitem"
+                            @onclick="AddProfile">
+                        + Add profile
+                    </button>
+                </div>
+            }
+        </div>
     </div>
 </nav>
 
@@ -75,9 +85,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Session.Changed += OnSessionChanged;
         Profiles.Changed += OnProfilesChanged;
-        await Profiles.InitializeAsync();
+        if (Session.IsAuthenticated)
+        {
+            await Profiles.InitializeAsync();
+        }
     }
+
+    private void OnSessionChanged() => InvokeAsync(StateHasChanged);
 
     private void OnProfilesChanged() => InvokeAsync(StateHasChanged);
 
@@ -109,5 +125,16 @@
         Navigation.NavigateTo($"profile/{id}");
     }
 
-    public void Dispose() => Profiles.Changed -= OnProfilesChanged;
+    private async Task LogoutAsync()
+    {
+        CloseMenu();
+        await Auth.LogoutAsync();
+        Navigation.NavigateTo("login");
+    }
+
+    public void Dispose()
+    {
+        Session.Changed -= OnSessionChanged;
+        Profiles.Changed -= OnProfilesChanged;
+    }
 }
