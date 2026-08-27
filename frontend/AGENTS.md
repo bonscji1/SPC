@@ -69,4 +69,4 @@ frontend/
 | Future improvements | `docs/future-improvements.md` |
 | Recipe instructions | `docs/recipe-instructions.md` |
 | Shared docs | `../docs/README.md` |
-| Implementation plans | `../plans/thePlan.md` (backend: step 10 done; login: step 11 done) |
+| Implementation plans | `../plans/thePlan.md` (backend: step 10; login: step 11; sign-up: step 12) |

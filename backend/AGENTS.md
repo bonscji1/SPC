@@ -15,7 +15,7 @@ Do not read `../frontend/docs/` unless the task involves frontend integration.
 
 - **ASP.NET Core** Minimal APIs on **.NET 10**
 - **PostgreSQL** via EF Core + Npgsql (JSONB for nested recipe parts)
-- **JWT** (HS256, 8h); default login `spc` / `spc` until a later accounts step
+- **JWT** (HS256, 8h); self-serve sign-up; `PasswordHasher` (salt in the stored hash)
 - Shares **`SPC.Core`** (`frontend/src/SPC.Core`) as a project reference
 
 ## Commands
@@ -38,8 +38,8 @@ Published stack from repo root: `docker compose up --build` → UI http://localh
 - DTOs live in `SPC.Core`; the API maps EF entities to those types
 - Scope every query by `account_id` from the JWT
 - Hard deletes
-- Do not hash passwords in the frontend; `PasswordHasher` on the server
-- JWT signing key and DB password from the environment in Compose (`.env`); dummy `spc` / `spc` is documented on purpose
+- Do not hash passwords in the frontend; `PasswordHasher` on the server (salt in the stored hash; compare on login)
+- JWT signing key and DB password from the environment in Compose (`.env`)
 
 ## Documentation
 

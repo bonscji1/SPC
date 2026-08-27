@@ -70,6 +70,6 @@ Before substantial features or refactors, create a plan in `plans/` with:
 
 ## Security
 
-- **Accounts:** one default user `spc` / `spc` until a later accounts step; store PasswordHasher output on the server — [step 10](plans/step10-backend.md).
-- **Login UI:** browser sends credentials; backend issues a JWT — [step 11](plans/step11-login-user.md). Do not hash passwords in WASM.
-- Do not commit JWT signing keys or DB passwords. The dummy `spc` pair is documented on purpose.
+- **Accounts:** self-serve sign-up; server hashes with salt (`PasswordHasher`) and compares hashes on login — [step 12](plans/step12-signup.md). Do not hash passwords in WASM.
+- **Login UI:** browser sends credentials; backend issues a JWT — [step 11](plans/step11-login-user.md).
+- Do not commit JWT signing keys or DB passwords.

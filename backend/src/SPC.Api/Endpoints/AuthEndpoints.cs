@@ -13,6 +13,7 @@ public static class AuthEndpoints
     public static void MapAuthEndpoints(this WebApplication app)
     {
         app.MapPost("/api/auth/login", LoginAsync);
+        app.MapPost("/api/auth/signup", SignUpAsync);
     }
 
     private static async Task<IResult> LoginAsync(
@@ -22,8 +23,11 @@ public static class AuthEndpoints
         TokenService tokens,
         CancellationToken cancellationToken)
     {
-        var username = request.Username?.Trim() ?? string.Empty;
-        var normalized = username.ToLowerInvariant();
+        if (!AccountRules.TryNormalizeUsername(request.Username, out _, out var normalized))
+        {
+            return Results.Unauthorized();
+        }
+
         var account = await db.Accounts.SingleOrDefaultAsync(
             a => a.NormalizedUsername == normalized,
             cancellationToken);
@@ -39,7 +43,55 @@ public static class AuthEndpoints
             return Results.Unauthorized();
         }
 
-        return Results.Ok(new LoginResponse
+        return TokenResult(account, tokens);
+    }
+
+    private static async Task<IResult> SignUpAsync(
+        LoginRequest request,
+        AppDbContext db,
+        IPasswordHasher<AccountEntity> hasher,
+        TokenService tokens,
+        CancellationToken cancellationToken)
+    {
+        if (!AccountRules.TryNormalizeUsername(request.Username, out var username, out var normalized)
+            || !AccountRules.IsPasswordAcceptable(request.Password))
+        {
+            return Results.BadRequest();
+        }
+
+        var taken = await db.Accounts.AnyAsync(
+            a => a.NormalizedUsername == normalized,
+            cancellationToken);
+        if (taken)
+        {
+            return Results.Conflict();
+        }
+
+        var account = new AccountEntity
+        {
+            Id = Guid.NewGuid(),
+            Username = username,
+            NormalizedUsername = normalized,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        // Unique salt is stored inside PasswordHasher's payload; login compares hashes, never the plaintext.
+        account.PasswordHash = hasher.HashPassword(account, request.Password);
+
+        db.Accounts.Add(account);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            return Results.Conflict();
+        }
+
+        return TokenResult(account, tokens);
+    }
+
+    private static IResult TokenResult(AccountEntity account, TokenService tokens) =>
+        Results.Ok(new LoginResponse
         {
             AccessToken = tokens.CreateToken(account),
             Account = new AccountDto
@@ -48,5 +100,4 @@ public static class AuthEndpoints
                 Username = account.Username,
             },
         });
-    }
 }

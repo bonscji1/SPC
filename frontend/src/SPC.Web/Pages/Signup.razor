@@ -1,0 +1,122 @@
+@page "/signup"
+@layout LoginLayout
+@attribute [AllowAnonymous]
+@using SPC.Core.Auth
+@inject IAuthService Auth
+@inject AuthSession Session
+@inject NavigationManager Navigation
+
+<PageTitle>Sign up — Smart Pig's Cookbook</PageTitle>
+
+<div class="page-header">
+    <h1>Sign up</h1>
+    <p class="muted">Create an account for your cookbook, library, and profiles.</p>
+</div>
+
+<section class="card login-panel">
+    <h2 class="section-title">Account</h2>
+    <p class="section-hint muted">This login is yours. Other people on this app do not see your recipes.</p>
+
+    <form @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+        <div class="field">
+            <label for="signup-username">Username</label>
+            <input id="signup-username"
+                   class="input"
+                   autocomplete="username"
+                   @bind="_username" />
+        </div>
+        <div class="field">
+            <label for="signup-password">Password</label>
+            <input id="signup-password"
+                   class="input"
+                   type="password"
+                   autocomplete="new-password"
+                   @bind="_password" />
+        </div>
+        <div class="field">
+            <label for="signup-password-confirm">Confirm password</label>
+            <input id="signup-password-confirm"
+                   class="input"
+                   type="password"
+                   autocomplete="new-password"
+                   @bind="_confirm" />
+        </div>
+
+        @if (_error is not null)
+        {
+            <div class="validation-errors" role="alert">
+                <p class="validation-title">@_error</p>
+            </div>
+        }
+
+        <div class="login-actions">
+            <button type="submit" class="btn btn-primary" disabled="@_busy">
+                @(_busy ? "Creating account…" : "Create account")
+            </button>
+        </div>
+    </form>
+
+    <p class="login-switch muted">
+        Already have an account? <a href="login">Log in</a>
+    </p>
+</section>
+
+@code {
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private string _confirm = string.Empty;
+    private string? _error;
+    private bool _busy;
+
+    protected override void OnInitialized()
+    {
+        if (Session.IsAuthenticated)
+        {
+            Navigation.NavigateTo("");
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        _error = null;
+
+        if (!AccountRules.TryNormalizeUsername(_username, out _, out _)
+            || !AccountRules.IsPasswordAcceptable(_password))
+        {
+            _error = "Choose a username and password.";
+            return;
+        }
+
+        if (_password != _confirm)
+        {
+            _error = "The passwords do not match.";
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var status = await Auth.SignUpAsync(_username, _password);
+            switch (status)
+            {
+                case SignUpStatus.Succeeded:
+                    Navigation.NavigateTo("");
+                    return;
+                case SignUpStatus.UsernameTaken:
+                    _error = "That username is taken.";
+                    return;
+                default:
+                    _error = "Choose a username and password.";
+                    return;
+            }
+        }
+        catch (HttpRequestException)
+        {
+            _error = "Could not reach the server. Is the API running?";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

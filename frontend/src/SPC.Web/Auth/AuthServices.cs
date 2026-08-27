@@ -62,6 +62,40 @@ public sealed class AuthService : IAuthService
         return true;
     }
 
+    public async Task<SignUpStatus> SignUpAsync(
+        string username,
+        string password,
+        CancellationToken cancellationToken = default)
+    {
+        if (!AccountRules.TryNormalizeUsername(username, out _, out _)
+            || !AccountRules.IsPasswordAcceptable(password))
+        {
+            return SignUpStatus.InvalidInput;
+        }
+
+        var response = await _http.PostAsJsonAsync(
+            "api/auth/signup",
+            new LoginRequest { Username = username.Trim(), Password = password },
+            cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            return SignUpStatus.UsernameTaken;
+        }
+
+        if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            return SignUpStatus.InvalidInput;
+        }
+
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken)
+            ?? throw new InvalidOperationException("Sign-up response was empty.");
+
+        await BeginSessionAsync(body.AccessToken, body.Account, cancellationToken);
+        return SignUpStatus.Succeeded;
+    }
+
     public async Task LogoutAsync()
     {
         _session.Clear();

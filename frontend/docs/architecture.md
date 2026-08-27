@@ -16,7 +16,7 @@ Blazor WebAssembly frontend for SPC. Read `../../docs/architecture.md` for monor
 
 ```
 src/SPC.Core/
-├── Auth/             DefaultAccount, AuthSession, IAuthService, login DTOs
+├── Auth/             AccountRules, AuthSession, IAuthService, login DTOs
 ├── Models/           RecipeDto, RecipeIngredientDto, IngredientDto, AccountDto, …
 ├── Validation/       RecipeValidator, ProfileValidator
 ├── Formatting/       NumberFormat (display quantities)
@@ -24,7 +24,7 @@ src/SPC.Core/
 └── Repositories/     IRecipeRepository, IUserProfileRepository, IIngredientRepository
 
 src/SPC.Web/
-├── Pages/            Routable pages (Home, Library, RecipeEditor, Login, …)
+├── Pages/            Routable pages (Home, Library, RecipeEditor, Login, Signup, …)
 ├── Components/       Reusable UI (IngredientRow, RecipeSummary, …)
 ├── Layout/           MainLayout, LoginLayout, NavMenu
 ├── Auth/             HTTP login, Bearer handler, AuthenticationStateProvider
@@ -55,7 +55,7 @@ src/SPC.Web/
 
 ### Identity vs calorie profile
 
-A **login account** (username + password sent to the API, Bearer token in `sessionStorage`) is not `UserProfileDto`. Profiles stay the household bodies used for energy targets. Recipes, the ingredient library, and profiles load from the signed-in account via `Api*` / cached repositories. See [plans/step11-login-user.md](../../plans/step11-login-user.md). Logout resets `RecipeDraftService` (singleton draft), `ActiveProfileService`, and the in-memory ingredient library cache.
+A **login account** (username + password sent to the API, Bearer token in `sessionStorage`) is not `UserProfileDto`. Profiles stay the household bodies used for energy targets. Sign-up creates another login account (`plans/step12-signup.md`); that is an extra **user**, not an extra calorie profile. Recipes, the ingredient library, and profiles load from the signed-in account via `Api*` / cached repositories. See [plans/step11-login-user.md](../../plans/step11-login-user.md). Logout resets `RecipeDraftService` (singleton draft), `ActiveProfileService`, and the in-memory ingredient library cache.
 
 ### Unsaved changes
 

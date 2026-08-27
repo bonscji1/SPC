@@ -41,13 +41,20 @@ public sealed class ApiFixture : IAsyncLifetime
 
     public HttpClient CreateClient() => Factory.CreateClient();
 
-    public async Task<string> LoginAsync(HttpClient client)
+    public async Task<(string Username, string Password, string AccessToken)> SignUpAsync(HttpClient client)
     {
-        var response = await client.PostAsJsonAsync("/api/auth/login", new
-        {
-            username = DefaultAccount.Username,
-            password = DefaultAccount.Password,
-        });
+        var username = $"user-{Guid.NewGuid():N}";
+        const string password = "secret";
+        var response = await client.PostAsJsonAsync("/api/auth/signup", new { username, password });
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<LoginResponse>()
+            ?? throw new InvalidOperationException("Sign-up response was empty.");
+        return (username, password, body.AccessToken);
+    }
+
+    public async Task<string> LoginAsync(HttpClient client, string username, string password)
+    {
+        var response = await client.PostAsJsonAsync("/api/auth/login", new { username, password });
         response.EnsureSuccessStatusCode();
         await using var stream = await response.Content.ReadAsStreamAsync();
         using var doc = await JsonDocument.ParseAsync(stream);
@@ -75,20 +82,24 @@ public sealed class ApiCollection : ICollectionFixture<ApiFixture>;
 public sealed class AuthTests(ApiFixture fixture)
 {
     [Fact]
-    public async Task Login_with_default_user_returns_jwt()
+    public async Task Signup_then_login_returns_jwt()
     {
         using var client = fixture.CreateClient();
-        var token = await fixture.LoginAsync(client);
+        var (username, password, token) = await fixture.SignUpAsync(client);
         Assert.False(string.IsNullOrWhiteSpace(token));
+
+        var again = await fixture.LoginAsync(client, username, password);
+        Assert.False(string.IsNullOrWhiteSpace(again));
     }
 
     [Fact]
     public async Task Login_with_wrong_password_is_unauthorized()
     {
         using var client = fixture.CreateClient();
+        var (username, _, _) = await fixture.SignUpAsync(client);
         var response = await client.PostAsJsonAsync("/api/auth/login", new
         {
-            username = DefaultAccount.Username,
+            username,
             password = "nope",
         });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -101,16 +112,41 @@ public sealed class AuthTests(ApiFixture fixture)
         var response = await client.GetAsync("/api/recipes");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Signup_duplicate_username_is_conflict()
+    {
+        using var client = fixture.CreateClient();
+        var (username, password, _) = await fixture.SignUpAsync(client);
+        var response = await client.PostAsJsonAsync("/api/auth/signup", new
+        {
+            username,
+            password,
+        });
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Signup_blank_is_bad_request()
+    {
+        using var client = fixture.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/auth/signup", new
+        {
+            username = "  ",
+            password = "",
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
 
 [Collection("api")]
 public sealed class RecipeTests(ApiFixture fixture)
 {
     [Fact]
-    public async Task Save_and_load_recipe_for_default_account()
+    public async Task Save_and_load_recipe_for_signed_up_account()
     {
         using var client = fixture.CreateClient();
-        var token = await fixture.LoginAsync(client);
+        var (_, _, token) = await fixture.SignUpAsync(client);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var recipe = new RecipeDto
@@ -131,5 +167,29 @@ public sealed class RecipeTests(ApiFixture fixture)
         var list = await client.GetFromJsonAsync<PagedResult<RecipeFamilyGroup>>("/api/recipes?page=1&pageSize=10");
         Assert.NotNull(list);
         Assert.Contains(list.Items, family => family.Primary.Id == recipe.Id);
+    }
+
+    [Fact]
+    public async Task One_account_does_not_see_another_accounts_recipes()
+    {
+        using var client = fixture.CreateClient();
+        var (_, _, firstToken) = await fixture.SignUpAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", firstToken);
+
+        var recipe = new RecipeDto
+        {
+            Id = Guid.NewGuid(),
+            Name = "First-user stew",
+            MealType = MealType.Dinner,
+        };
+        recipe.FamilyId = recipe.Id;
+        var save = await client.PutAsJsonAsync("/api/recipes", recipe);
+        save.EnsureSuccessStatusCode();
+
+        var (_, _, secondToken) = await fixture.SignUpAsync(client);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secondToken);
+        var list = await client.GetFromJsonAsync<PagedResult<RecipeFamilyGroup>>("/api/recipes?page=1&pageSize=10");
+        Assert.NotNull(list);
+        Assert.DoesNotContain(list.Items, family => family.Primary.Id == recipe.Id);
     }
 }

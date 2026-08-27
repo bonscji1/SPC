@@ -13,7 +13,7 @@ docker compose up --build
 
 Open http://localhost:8080
 
-Nginx serves the Blazor app and proxies `/api` to the backend. Postgres stays internal. Log in as **`spc` / `spc`** (placeholder account until a later accounts step).
+Nginx serves the Blazor app and proxies `/api` to the backend. Postgres stays internal. **Sign up** for an account, then log in. Each account has its own recipes, library, and profiles.
 
 ## Local SDK
 

@@ -57,9 +57,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AccountEntity>>();
     await db.Database.MigrateAsync();
-    await SeedData.EnsureDefaultAccountAsync(db, hasher);
 }
 
 app.UseCors("sdk");

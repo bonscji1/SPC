@@ -5,7 +5,8 @@
     {
         var returnUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
         if (string.IsNullOrEmpty(returnUrl)
-            || returnUrl.StartsWith("login", StringComparison.OrdinalIgnoreCase))
+            || returnUrl.StartsWith("login", StringComparison.OrdinalIgnoreCase)
+            || returnUrl.StartsWith("signup", StringComparison.OrdinalIgnoreCase))
         {
             Navigation.NavigateTo("login");
             return;

@@ -5,7 +5,7 @@ ASP.NET Core Minimal API for SPC. Also read `../../docs/README.md`.
 ## Stack
 
 - .NET 10, Minimal APIs, EF Core, PostgreSQL
-- JWT Bearer (8 hours). Default user **`spc` / `spc`** (placeholder until a later accounts step)
+- JWT Bearer (8 hours). Sign up at `POST /api/auth/signup`; no seeded login
 - Project reference to `frontend/src/SPC.Core`
 
 ## Run
@@ -22,9 +22,11 @@ http://localhost:5100 — CORS allows the Blazor `dotnet watch` origin http://lo
 
 ## Auth
 
-`POST /api/auth/login` `{ "username": "spc", "password": "spc" }` → `{ "accessToken", "account" }`.
+`POST /api/auth/signup` `{ "username", "password" }` → `{ "accessToken", "account" }`, or **409** if the username is taken, **400** if the fields are invalid. The API stores `PasswordHasher` output (PBKDF2 with a unique salt in the hash). The browser never hashes.
 
-Other `/api/*` routes (except `/api/health`) require `Authorization: Bearer <token>`.
+`POST /api/auth/login` same body → same response if `VerifyHashedPassword` succeeds, otherwise **401**.
+
+Other `/api/*` routes (except `/api/health`) require `Authorization: Bearer <token>`. Each account only sees its own recipes, library, and profiles.
 
 ## Data routes
 

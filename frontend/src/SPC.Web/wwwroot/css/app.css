@@ -140,6 +140,11 @@ a:hover {
     margin-top: 1rem;
 }
 
+.login-switch {
+    margin: 1rem 0 0;
+    font-size: var(--text-small);
+}
+
 .nav-profile-button {
     max-width: 12rem;
     overflow: hidden;

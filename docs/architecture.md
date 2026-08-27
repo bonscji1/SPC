@@ -46,11 +46,11 @@ See `frontend/docs/architecture.md` for frontend detail.
 
 ## Backend (step 10)
 
-**In place:** C# Minimal APIs, PostgreSQL, JWT, one baked-in default user (`spc` / `spc`) until a later accounts step. See [plans/step10-backend.md](../plans/step10-backend.md).
+**In place:** C# Minimal APIs, PostgreSQL, JWT, self-serve sign-up. See [plans/step10-backend.md](../plans/step10-backend.md) and [plans/step12-signup.md](../plans/step12-signup.md).
 
 The API:
 
-- Seeds the default account; `POST /api/auth/login` issues a Bearer token (server-side salt + hash)
+- Accepts sign-up and login; `POST /api/auth/signup` stores a salted hash; `POST /api/auth/login` compares hashes and issues a Bearer token
 - Validates Bearer on every other API request; scopes rows by account id
 - Exposes REST endpoints accepting/returning the **same DTOs** as `SPC.Core`
 - Persists in PostgreSQL (`account_id` on user-owned rows; JSONB for nested recipe parts)
@@ -62,13 +62,13 @@ Users **share the database**, not each other’s recipes or libraries.
 
 See [plans/step10-backend.md](../plans/step10-backend.md).
 
-## Identity (step 11)
+## Identity (steps 11–12)
 
-**Account** (login user) is not the same as a step 4 **person profile** (BMR / TDEE). The account owns recipes, the ingredient library, and profiles.
+**Account** (login user) is not the same as a step 4 **person profile** (BMR / TDEE). The account owns recipes, the ingredient library, and profiles. **Extra users** are extra login accounts (sign-up), not extra calorie profiles.
 
-The UI logs in against the API, holds the issued Bearer token in `sessionStorage`, and uses `Api*` / cached ingredient repositories. The ingredient library is loaded once into memory so the name picker stays local. No client-side hashing or dummy tokens. Logout clears `RecipeDraftService`, `ActiveProfileService`, and the ingredient cache.
+The UI logs in or signs up against the API, holds the issued Bearer token in `sessionStorage`, and uses `Api*` / cached ingredient repositories. The ingredient library is loaded once into memory so the name picker stays local. No client-side hashing. Logout clears `RecipeDraftService`, `ActiveProfileService`, and the ingredient cache.
 
-See [plans/step11-login-user.md](../plans/step11-login-user.md).
+See [plans/step11-login-user.md](../plans/step11-login-user.md) and [plans/step12-signup.md](../plans/step12-signup.md).
 
 ## Deployment (step 6)
 
@@ -108,7 +108,7 @@ Persistence: `RecipeDraftService` → `IRecipeRepository` → HTTP + Bearer → 
 | Energy targets (BMR / TDEE) | `frontend/docs/energy-targets.md` |
 | Agent rules (shared) | `AGENTS.md` |
 | Implementation roadmap | `plans/thePlan.md` |
-| Login / accounts | `plans/step11-login-user.md` |
+| Login / accounts | `plans/step11-login-user.md`, `plans/step12-signup.md` |
 | Backend + database | `plans/step10-backend.md` |
 | Run the stack | Root `README.md` (`docker compose up --build`) |
 | Deployment (compose) | `plans/step6-deployments.md` |

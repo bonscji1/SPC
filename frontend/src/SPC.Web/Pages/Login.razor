@@ -15,7 +15,7 @@
 
 <section class="card login-panel">
     <h2 class="section-title">Account</h2>
-    <p class="section-hint muted">Until a later accounts step, the only login is @DefaultAccount.Username / @DefaultAccount.Password.</p>
+    <p class="section-hint muted">Use the username and password you signed up with.</p>
 
     <form @onsubmit="SubmitAsync" @onsubmit:preventDefault>
         <div class="field">
@@ -47,11 +47,15 @@
             </button>
         </div>
     </form>
+
+    <p class="login-switch muted">
+        Need an account? <a href="signup">Sign up</a>
+    </p>
 </section>
 
 @code {
-    private string _username = DefaultAccount.Username;
-    private string _password = DefaultAccount.Password;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
     private string? _error;
     private bool _busy;
 
@@ -96,6 +100,7 @@
         var url = ReturnUrl?.Trim();
         if (string.IsNullOrEmpty(url)
             || url.StartsWith("login", StringComparison.OrdinalIgnoreCase)
+            || url.StartsWith("signup", StringComparison.OrdinalIgnoreCase)
             || url.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             || url.StartsWith("//", StringComparison.Ordinal)
             || url.Contains('\\'))

@@ -45,7 +45,7 @@ Open http://localhost:5180
 | _Stack and tooling_ | done | Blazor WASM, .NET 10, SPC.Core |
 | _Project structure_ | done | See architecture doc |
 | _Components and UI_ | done | See [ui.md](./ui.md) and architecture product preferences |
-| _State and data fetching_ | done | Recipe, profile, and ingredient-library repos over HTTP + Bearer; login in [step 11](../../plans/step11-login-user.md) |
+| _State and data fetching_ | done | Recipe, profile, and ingredient-library repos over HTTP + Bearer; login and sign-up |
 | _Testing_ | partial | Core unit tests including portion math and energy targets |
 
 ## Agent instructions

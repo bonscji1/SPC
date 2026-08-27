@@ -12,7 +12,7 @@ Agents and contributors working in a single subproject should read this folder *
 |----------|--------|-------------|
 | [Architecture overview](./architecture.md) | done | Monorepo layout, DTO/repository principles |
 | _Development setup_ | done | Root `README.md`: `docker compose up --build` → http://localhost:8080 |
-| _API contract_ | done | Login + recipe/ingredient/profile JSON in [backend/docs](../backend/docs/README.md); Blazor uses that API ([step 11](../plans/step11-login-user.md)) |
+| _API contract_ | done | Login, sign-up, and recipe/ingredient/profile JSON in [backend/docs](../backend/docs/README.md) |
 | _Deployment_ | done | Repo-root Compose + frontend image; see [step 6](../plans/step6-deployments.md) |
 
 ## Subproject documentation
