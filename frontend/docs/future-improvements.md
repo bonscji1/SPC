@@ -9,6 +9,7 @@ Tracked ideas for later frontend work. Not scheduled — add items here when we 
 ## Recipes and cooking
 
 - **Goal: lose / maintain / gain** — Offset TDEE with a user-chosen calorie surplus or deficit.
+- **Search recipes by a list of ingredients** — User names several foods they have (or want to use). Two match modes: **(a)** the recipe’s ingredients are a *subset* of that list (cookable from what you have, no extras), **(b)** the recipe *contains all* of those ingredients (must use everything named). Home today only filters by recipe name and meal type.
 
 ## Profiles
 

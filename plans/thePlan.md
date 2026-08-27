@@ -1,9 +1,9 @@
 # Plan: Smart Pig's Cookbook — Master roadmap
 
 **Date:** 2026-08-24  
-**Updated:** 2026-08-26  
+**Updated:** 2026-08-27  
 **Scope:** both (frontend-first; backend when persistence/API is needed)  
-**Status:** in progress — steps 1–6 done; next is cookbook (step 7) or scaling (step 8)
+**Status:** in progress — steps 1–8 done; next product step is nutrition API (step 9). Identity (step 10) and backend (step 11) are drafts for multi-user scale.
 
 ## Vision
 
@@ -35,9 +35,11 @@ A recipe and portion calculator for people who cook and care about calories with
 | 4 | Derive lunch kcal from selectable person profiles (meal split per person) | **done** | [step4-human-tracking.md](./step4-human-tracking.md) |
 | 5 | Persist recipes and ingredient nutrition data | **done** — localStorage; backend later | [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md) |
 | 6 | Deployments — containerize frontend; repo-level compose | **done** | [step6-deployments.md](./step6-deployments.md) |
-| 7 | Cookbook — browse and open saved recipes | draft (home has a simple saved-recipe list) | [step7-cookbook.md](./step7-cookbook.md) |
-| 8 | Recipe scaling and what-if adjustments (portions, add/remove ingredient) | draft | [step8-recipe-adjustment.md](./step8-recipe-adjustment.md) |
+| 7 | Cookbook — browse and open saved recipes | **done** — Home list; no extra route | [step7-cookbook.md](./step7-cookbook.md) |
+| 8 | Recipe scaling, variations, and what-if | **done** | [step8-recipe-adjustment.md](./step8-recipe-adjustment.md) |
 | 9 | Automatic ingredient nutrition lookup (API) | draft | [step9-ingredient-nutrition-api.md](./step9-ingredient-nutrition-api.md) |
+| 10 | Login user — account identity, dummy default until API | draft | [step10-login-user.md](./step10-login-user.md) |
+| 11 | Backend + database — persist per-user data; Bearer auth | draft — discuss DB first | [step11-backend.md](./step11-backend.md) |
 
 ### Future / aspirational (not scheduled)
 
@@ -45,7 +47,6 @@ A recipe and portion calculator for people who cook and care about calories with
 |------|-------|
 | AI recipe/ingredient capture from photo | High UX value; needs vision + parsing pipeline |
 | Multi-person portions in one session | Different targets per diner from one dish |
-| Backend service | Introduce when persistence, auth, or shared data is required |
 | Mobile / PWA | After web core is solid |
 
 ## Dependency graph
@@ -58,11 +59,13 @@ step1-init-fe
                     └── step4-human-tracking
                             └── step5-save-recipes-and-ingredients
                                     ├── step7-cookbook
-                                    └── step8-recipe-adjustment
-                                            └── step9-ingredient-nutrition-api
+                                    ├── step8-recipe-adjustment
+                                    │       └── step9-ingredient-nutrition-api
+                                    └── step10-login-user
+                                            └── step11-backend   # also uses step 6 compose slots
 ```
 
-Steps 6 (deployments), 7 (cookbook), and 8 (scaling) can be reordered after step 5 depending on priority. Deployments only needs a publishable frontend (step 1).
+Step 9 (nutrition API) is the next **product** step and does not wait on login. Steps 10–11 are **infrastructure** drafts: a dummy login account first, then a real API. Cookbook browsing lives on Home (step 7). Deployments (step 6) only needed a publishable frontend (step 1); compose already has room for `backend` + `db`.
 
 ## How to use these plans
 
@@ -73,6 +76,6 @@ Steps 6 (deployments), 7 (cookbook), and 8 (scaling) can be reordered after step
 
 ## Open questions (cross-cutting)
 
-- When do we introduce a backend vs. localStorage-only persistence? **Step 5 is done on localStorage.** Real app: HTTP API + PostgreSQL behind the same repository interfaces; see [step5-save-recipes-and-ingredients.md](./step5-save-recipes-and-ingredients.md).
+- When do we introduce a backend vs. localStorage-only persistence? **Step 5 is done on localStorage.** Identity first ([step 10](./step10-login-user.md)), then API + DB ([step 11](./step11-backend.md)). Database engine and schema are **not** chosen yet — discuss before implementing step 11.
 - Which nutrition API (if any) is viable for step 9 — licensing, coverage, Czech/EU foods?
 - ~~Exact formulas for TDEE / meal calorie split~~ — decided: Mifflin–St Jeor × US activity factors; see `frontend/docs/energy-targets.md`.

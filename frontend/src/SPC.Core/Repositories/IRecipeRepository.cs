@@ -7,12 +7,11 @@ public interface IRecipeRepository
     Task<IReadOnlyList<RecipeDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Newest <see cref="RecipeDto.UpdatedAt"/> first, then name.
-    /// Page size is 10, 25, or 50; other values fall back to 10. Out-of-range pages clamp.
-    /// Pass <paramref name="mealType"/> to keep one recipe type only.
-    /// Pass <paramref name="nameQuery"/> for a case-insensitive name contains filter.
+    /// Families grouped by <see cref="RecipeDto.FamilyId"/> (missing family id treated as the recipe id).
+    /// Newest family activity first, then primary name. Page size is 10, 25, or 50.
+    /// Name query matches recipe name or variant label. Meal type matches if any member has that type.
     /// </summary>
-    Task<PagedResult<RecipeDto>> GetPageAsync(
+    Task<PagedResult<RecipeFamilyGroup>> GetPageAsync(
         int page,
         int pageSize,
         MealType? mealType = null,
@@ -21,7 +20,13 @@ public interface IRecipeRepository
 
     Task<RecipeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>All rows that share a family, default variant first.</summary>
+    Task<IReadOnlyList<RecipeDto>> GetByFamilyIdAsync(Guid familyId, CancellationToken cancellationToken = default);
+
     Task<RecipeSaveResult> SaveAsync(RecipeDto recipe, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes every row in the family (the recipe on Home).</summary>
+    Task DeleteFamilyAsync(Guid familyId, CancellationToken cancellationToken = default);
 }

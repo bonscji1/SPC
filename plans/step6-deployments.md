@@ -18,7 +18,7 @@ Run the published stack with one command from the repo root, for local testing a
 
 - TLS / custom domains / Traefik
 - Image registry, CI publish, Kubernetes
-- Running Postgres or a backend container in this step
+- Running a database or a backend container in this step
 - Changing persistence (localStorage still lives in the browser)
 - Stub services or commented-out compose/Dockerfile placeholders
 
@@ -64,7 +64,7 @@ SPC/
 
 Host port **8080** (http://localhost:8080) maps to nginx **80** in the image.
 
-When a backend is added: no public backend port — nginx proxies `/api`. Postgres stays internal, credentials via `.env` (gitignored), named volume for data. Do not add those services until they exist.
+When a backend is added: no public backend port — nginx proxies `/api`. The database stays internal (engine chosen in [step 11](./step11-backend.md)), credentials via `.env` (gitignored), named volume for data. Do not add those services until they exist.
 
 ## Implementation steps
 

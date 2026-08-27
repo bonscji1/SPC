@@ -35,8 +35,62 @@
           OnConfirm="ConfirmLeave"
           OnCancel="CancelLeave" />
 
+<AppModal IsOpen="_showVariantEditModal"
+          Title="Edit variant"
+          ShowCancel="true"
+          OnCancel="CancelVariantEdit">
+    <ChildContent>
+        <div class="field">
+            <label for="variant-edit-name">Variant name</label>
+            <input id="variant-edit-name"
+                   class="input"
+                   placeholder="Default"
+                   value="@_variantEditName"
+                   @oninput="e => _variantEditName = e.Value?.ToString() ?? string.Empty" />
+            <p class="field-hint muted">Empty or Default is the base tab for this recipe.</p>
+        </div>
+        @if (!string.IsNullOrEmpty(_variantEditError))
+        {
+            <div class="validation-errors" role="alert">
+                <p>@_variantEditError</p>
+            </div>
+        }
+    </ChildContent>
+    <Actions>
+        <button type="button" class="btn btn-secondary" @onclick="CancelVariantEdit">Cancel</button>
+        <button type="button" class="btn btn-secondary" disabled="@_isSavingVariantEdit" @onclick="AskDeleteEditingVariant">Delete</button>
+        <button type="button" class="btn btn-primary" disabled="@_isSavingVariantEdit" @onclick="SaveVariantNameAsync">Save</button>
+    </Actions>
+</AppModal>
+
+<AppModal IsOpen="_showSaveAsVariantModal"
+          Title="Save as variant"
+          ConfirmText="Save variant"
+          CancelText="Cancel"
+          ShowCancel="true"
+          ConfirmDisabled="@(_isSavingAsVariant || RecipeDto.IsUnnamedVariant(_saveAsVariantName))"
+          OnConfirm="SaveAsVariantAsync"
+          OnCancel="CancelSaveAsVariant">
+    <p class="section-hint muted">Saves a copy as a new tab. This variant stays as last saved.</p>
+    <div class="field">
+        <label for="save-as-variant-name">Variant name</label>
+        <input id="save-as-variant-name"
+               class="input"
+               placeholder="e.g. extra onion, half batch"
+               value="@_saveAsVariantName"
+               @oninput="e => _saveAsVariantName = e.Value?.ToString() ?? string.Empty" />
+        <p class="field-hint muted">Shown as a tab on this recipe. Not Default.</p>
+    </div>
+    @if (!string.IsNullOrEmpty(_saveAsVariantError))
+    {
+        <div class="validation-errors" role="alert">
+            <p>@_saveAsVariantError</p>
+        </div>
+    }
+</AppModal>
+
 <AppModal IsOpen="_showDeleteModal"
-          Title="Delete this recipe?"
+          Title="@_deleteTitle"
           Message="@_deleteMessage"
           ConfirmText="Delete"
           CancelText="Cancel"
@@ -53,8 +107,166 @@
           OnConfirm="ConfirmLibraryUpdatesAsync"
           OnCancel="CancelLibraryUpdates" />
 
+<AppModal IsOpen="_showScaleModal"
+          Title="Scale this for…"
+          ConfirmText="Preview"
+          CancelText="Cancel"
+          ShowCancel="true"
+          ConfirmDisabled="@(!CanPreviewScale)"
+          OnConfirm="PreviewScale"
+          OnCancel="CancelScale">
+    <p class="section-hint muted">Uses theoretical (raw) ingredient grams. Cooked weight is not scaled. Nothing is saved until you choose to.</p>
+    <div class="field">
+        <label for="scale-portions">Number of portions</label>
+        <input id="scale-portions"
+               class="input"
+               type="number"
+               min="0"
+               step="0.1"
+               placeholder="e.g. 8"
+               value="@FormatOptionalDecimal(_scalePortions)"
+               @oninput="OnScalePortionsInput" />
+    </div>
+    <fieldset class="field">
+        <legend>Portion size</legend>
+        <div class="choice-row">
+            <label class="choice">
+                <input type="radio"
+                       name="scale-size-kind"
+                       checked="@(_scaleSizeKind == RecipeScaleSizeKind.GramsPerPortion)"
+                       @onchange="@(() => _scaleSizeKind = RecipeScaleSizeKind.GramsPerPortion)" />
+                Grams
+            </label>
+            <label class="choice">
+                <input type="radio"
+                       name="scale-size-kind"
+                       checked="@(_scaleSizeKind == RecipeScaleSizeKind.CaloriesPerPortion)"
+                       @onchange="@(() => _scaleSizeKind = RecipeScaleSizeKind.CaloriesPerPortion)" />
+                kcal
+            </label>
+        </div>
+    </fieldset>
+    <div class="field">
+        <label for="scale-size">@(_scaleSizeKind == RecipeScaleSizeKind.GramsPerPortion ? "Grams per portion" : "kcal per portion")</label>
+        <input id="scale-size"
+               class="input"
+               type="number"
+               min="0"
+               step="0.1"
+               placeholder="@(_scaleSizeKind == RecipeScaleSizeKind.GramsPerPortion ? "e.g. 250" : "e.g. 500")"
+               value="@FormatOptionalDecimal(_scaleSize)"
+               @oninput="OnScaleSizeInput" />
+    </div>
+    <div class="field">
+        <button type="button"
+                class="btn btn-secondary"
+                disabled="@(MealTargetKcal is null)"
+                @onclick="ScaleForProfile">
+            @ScaleForProfileLabel
+        </button>
+        @if (MealTargetKcal is decimal mealKcal)
+        {
+            <p class="field-hint muted">
+                Fills kcal per portion from
+                @(string.IsNullOrWhiteSpace(ActiveProfiles.Active?.Name) ? "this profile" : ActiveProfiles.Active!.Name)’s
+                @MealTypes.DisplayName(Draft.Recipe.MealType).ToLowerInvariant()
+                (@NumberFormat.Format(mealKcal) kcal). Number of portions stays yours (defaults to 1 if empty).
+            </p>
+        }
+        else
+        {
+            <p class="field-hint muted">Select a profile (top right) to fill kcal from that meal split.</p>
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(_scaleError))
+    {
+        <div class="validation-errors" role="alert">
+            <p>@_scaleError</p>
+        </div>
+    }
+</AppModal>
+
+<AppModal IsOpen="_showScalePreview"
+          Title="Scaled ingredients"
+          Wide="true"
+          ShowCancel="true"
+          OnCancel="CancelScale">
+    <ChildContent>
+    @if (_scalePreview?.Recipe is { } preview)
+    {
+        <p class="section-hint muted">
+            Scale factor @NumberFormat.Format(_scalePreview.ScaleFactor).
+            Batch @NumberFormat.WithUnit(_scalePreview.TheoreticalWeightG, "g"),
+            @NumberFormat.WithUnit(_scalePreview.TheoreticalCalories, "kcal").
+            Not saved yet.
+        </p>
+        <ul class="scale-preview-list">
+            @foreach (var ingredient in preview.Ingredients)
+            {
+                <li>
+                    <span>@ingredient.Name</span>
+                    <span>@NumberFormat.WithUnit(ingredient.Grams, "g")</span>
+                </li>
+            }
+            @foreach (var spice in preview.Spices.Where(RecipeValidator.IsSpiceRowTouched))
+            {
+                <li>
+                    <span>@spice.Name</span>
+                    <span>@(spice.Grams is > 0 ? NumberFormat.WithUnit(spice.Grams.Value, "g") : "—")</span>
+                </li>
+            }
+        </ul>
+        <div class="field">
+            <label for="scale-save-name">Name</label>
+            <input id="scale-save-name"
+                   class="input"
+                   placeholder="e.g. extra onion, half batch"
+                   value="@_scaleSaveName"
+                   @oninput="e => _scaleSaveName = e.Value?.ToString() ?? string.Empty" />
+            <p class="field-hint muted">Save as variant uses this as the tab name. Save as recipe uses it as the dish name.</p>
+        </div>
+        @if (!string.IsNullOrEmpty(_scaleSaveError))
+        {
+            <div class="validation-errors" role="alert">
+                <p>@_scaleSaveError</p>
+            </div>
+        }
+    }
+    </ChildContent>
+    <Actions>
+        <button type="button" class="btn btn-secondary" @onclick="CancelScale">Cancel</button>
+        <button type="button" class="btn btn-secondary" disabled="@_isSavingScale" @onclick="SaveScaleAsVariantAsync">Save as variant</button>
+        <button type="button" class="btn btn-primary" disabled="@_isSavingScale" @onclick="SaveScaleAsNewAsync">Save as recipe</button>
+    </Actions>
+</AppModal>
+
 <div class="page-header">
     <h1>@PageHeading</h1>
+    @if (ShowVariantTabs)
+    {
+        <div class="variant-tabs" role="tablist" aria-label="Recipe variants">
+            @foreach (var member in _familyMembers)
+            {
+                var isActive = member.Id == Draft.Recipe.Id;
+                <div class="variant-tab-item @(isActive ? "is-active" : null)">
+                    <button type="button"
+                            role="tab"
+                            class="variant-tab"
+                            aria-selected="@isActive"
+                            @onclick="@(() => SwitchVariant(member.Id))">
+                        @member.DisplayVariantLabel()
+                    </button>
+                    <button type="button"
+                            class="variant-tab-edit"
+                            title="Edit variant"
+                            aria-label="@($"Edit {member.DisplayVariantLabel()}")"
+                            @onclick="@(() => OpenVariantEdit(member))">
+                        ✎
+                    </button>
+                </div>
+            }
+        </div>
+    }
     <p class="muted">Name your dish, list ingredients, and write the cooking steps.</p>
 </div>
 
@@ -177,8 +389,14 @@ else
 
             <div class="save-panel">
                 <button type="button"
+                        class="btn btn-secondary btn-block"
+                        disabled="@(!CanSave || _isSaving || _isDeleting || _isSavingScale || _isSavingAsVariant)"
+                        @onclick="OpenScale">
+                    Scale this for…
+                </button>
+                <button type="button"
                         class="btn btn-primary btn-block"
-                        disabled="@(!CanSave || _isSaving || _isDeleting)"
+                        disabled="@(!CanSave || _isSaving || _isDeleting || _isSavingAsVariant)"
                         @onclick="SaveRecipeAsync">
                     @(_isSaving ? "Saving…" : "Save recipe")
                 </button>
@@ -186,9 +404,9 @@ else
                 {
                     <button type="button"
                             class="btn btn-secondary btn-block"
-                            disabled="@(_isSaving || _isDeleting)"
-                            @onclick="AskDelete">
-                        @(_isDeleting ? "Deleting…" : "Delete recipe")
+                            disabled="@(!CanSave || _isSaving || _isDeleting || _isSavingAsVariant)"
+                            @onclick="OpenSaveAsVariant">
+                        @(_isSavingAsVariant ? "Saving…" : "Save as variant")
                     </button>
                 }
             </div>
@@ -226,6 +444,20 @@ else
             </button>
         </div>
     </section>
+
+    <section class="card editor-instructions-card">
+        <h2 class="section-title">Notes</h2>
+        <p class="section-hint muted">What you think about this variant. Type <code>#</code> to link an ingredient or spice — hover the chip for the amount.</p>
+        @if (DraftReadyForEditors)
+        {
+            <InstructionStepEditor @key="@($"notes-{Draft.Recipe.Id}")"
+                                   Step="Draft.Recipe.Notes"
+                                   Recipe="Draft.Recipe"
+                                   ShowNumber="false"
+                                   CanRemove="false"
+                                   OnChanged="OnRecipeChanged" />
+        }
+    </section>
 }
 
 @code {
@@ -244,16 +476,44 @@ else
     private bool _showLibraryModal;
     private string _libraryModalMessage = string.Empty;
     private IReadOnlyList<IngredientLibraryUpdate> _pendingLibraryUpdates = [];
+    private string _deleteTitle = "Delete this recipe?";
     private string _deleteMessage = "This recipe has data. Delete it? This cannot be undone.";
+    private Guid? _pendingDeleteId;
     private string? _pendingNavigation;
     private bool _bypassNavigationGuard;
 
     private bool _newInitialized;
     private Guid? _loadedRouteId;
+    private bool _showScaleModal;
+    private bool _showScalePreview;
+    private bool _isSavingScale;
+    private decimal? _scalePortions;
+    private decimal? _scaleSize;
+    private RecipeScaleSizeKind _scaleSizeKind = RecipeScaleSizeKind.GramsPerPortion;
+    private string? _scaleError;
+    private string? _scaleSaveError;
+    private RecipeScaleResult? _scalePreview;
+    private string _scaleSaveName = string.Empty;
+    private IReadOnlyList<RecipeDto> _familyMembers = [];
+    private bool _showVariantEditModal;
+    private bool _isSavingVariantEdit;
+    private Guid? _editingVariantId;
+    private string _variantEditName = string.Empty;
+    private string? _variantEditError;
+    private bool _showSaveAsVariantModal;
+    private bool _isSavingAsVariant;
+    private string _saveAsVariantName = string.Empty;
+    private string? _saveAsVariantError;
 
     private string PageHeading => RecipeId.HasValue ? "Edit recipe" : "Create recipe";
 
-    private string PageTitle => string.IsNullOrWhiteSpace(Draft.Recipe.Name) ? PageHeading : Draft.Recipe.Name;
+    private string PageTitle => string.IsNullOrWhiteSpace(Draft.Recipe.Name) ? PageHeading : Draft.Recipe.DisplayTitle();
+
+    private bool ShowVariantTabs => RecipeId.HasValue && string.IsNullOrEmpty(_loadError) && _familyMembers.Count > 0;
+
+    private bool DraftReadyForEditors =>
+        string.IsNullOrEmpty(_loadError)
+        && (RecipeId is Guid id ? _loadedRouteId == id : _newInitialized);
 
     private bool CanSave => RecipeValidator.IsRecipeValid(Draft.Recipe);
 
@@ -272,6 +532,15 @@ else
     }
 
     private decimal? MealTargetKcal => ActiveEnergy?.KcalFor(Draft.Recipe.MealType);
+
+    private string ScaleForProfileLabel
+    {
+        get
+        {
+            var name = ActiveProfiles.Active?.Name?.Trim();
+            return string.IsNullOrWhiteSpace(name) ? "Scale for profile" : $"Scale for profile {name}";
+        }
+    }
 
     private string? MealTargetTooltip
     {
@@ -315,11 +584,13 @@ else
             if (recipe is null)
             {
                 _loadError = "Recipe not found.";
+                _familyMembers = [];
                 await SyncBeforeUnloadAsync();
                 return;
             }
 
             Draft.Load(recipe);
+            _familyMembers = await RecipeRepository.GetByFamilyIdAsync(RecipeScaler.FamilyKey(recipe));
             _loadError = null;
             await SyncBeforeUnloadAsync();
             return;
@@ -333,6 +604,7 @@ else
         _newInitialized = true;
         _loadedRouteId = null;
         _loadError = null;
+        _familyMembers = [];
         Draft.NewRecipe();
         Draft.AddIngredient();
         Draft.MarkClean();
@@ -343,6 +615,154 @@ else
     {
         Draft.Recipe.Name = e.Value?.ToString() ?? string.Empty;
         OnRecipeChanged();
+    }
+
+    private void SwitchVariant(Guid id)
+    {
+        if (id == Draft.Recipe.Id)
+        {
+            return;
+        }
+
+        Navigation.NavigateTo($"/recipe/{id}");
+    }
+
+    private void OpenVariantEdit(RecipeDto member)
+    {
+        _editingVariantId = member.Id;
+        _variantEditName = member.DisplayVariantLabel();
+        _variantEditError = null;
+        _showVariantEditModal = true;
+    }
+
+    private void CancelVariantEdit()
+    {
+        _showVariantEditModal = false;
+        _editingVariantId = null;
+        _variantEditError = null;
+    }
+
+    private async Task SaveVariantNameAsync()
+    {
+        if (_editingVariantId is not Guid id)
+        {
+            return;
+        }
+
+        var normalized = RecipeDto.NormalizeVariantLabel(_variantEditName);
+        if (RecipeList.VariantLabelIsTaken(_familyMembers, id, normalized))
+        {
+            _variantEditError = "That name is already used on another tab.";
+            return;
+        }
+
+        var stored = await RecipeRepository.GetByIdAsync(id);
+        if (stored is null)
+        {
+            _variantEditError = "This variant is no longer saved.";
+            return;
+        }
+
+        if (RecipeDto.NormalizeVariantLabel(stored.VariantLabel) == normalized)
+        {
+            CancelVariantEdit();
+            return;
+        }
+
+        stored.VariantLabel = normalized;
+        _isSavingVariantEdit = true;
+        try
+        {
+            var result = await RecipeRepository.SaveAsync(stored);
+            if (!result.Success)
+            {
+                _variantEditError = result.Message;
+                return;
+            }
+
+            if (Draft.Recipe.Id == id)
+            {
+                Draft.ApplyPersistedVariantLabel(normalized);
+                await SyncBeforeUnloadAsync();
+            }
+
+            _familyMembers = await RecipeRepository.GetByFamilyIdAsync(RecipeScaler.FamilyKey(stored));
+            CancelVariantEdit();
+        }
+        finally
+        {
+            _isSavingVariantEdit = false;
+        }
+    }
+
+    private void AskDeleteEditingVariant()
+    {
+        if (_editingVariantId is not Guid id)
+        {
+            return;
+        }
+
+        var member = _familyMembers.FirstOrDefault(m => m.Id == id) ?? Draft.Recipe;
+        CancelVariantEdit();
+        AskDelete(member);
+    }
+
+    private void OpenSaveAsVariant()
+    {
+        _saveAsVariantName = string.Empty;
+        _saveAsVariantError = null;
+        _showSaveAsVariantModal = true;
+    }
+
+    private void CancelSaveAsVariant()
+    {
+        _showSaveAsVariantModal = false;
+        _saveAsVariantError = null;
+    }
+
+    private async Task SaveAsVariantAsync()
+    {
+        if (RecipeDto.IsUnnamedVariant(_saveAsVariantName))
+        {
+            _saveAsVariantError = "Add a name other than Default for this variant.";
+            return;
+        }
+
+        var label = RecipeDto.NormalizeVariantLabel(_saveAsVariantName);
+        if (RecipeList.VariantLabelIsTaken(_familyMembers, Guid.Empty, label))
+        {
+            _saveAsVariantError = "That name is already used on another tab.";
+            return;
+        }
+
+        var familyId = RecipeScaler.FamilyKey(Draft.Recipe);
+        var toSave = RecipeScaler.AsVariant(Draft.Recipe, familyId, label);
+        toSave.Name = string.IsNullOrWhiteSpace(Draft.Recipe.Name) ? toSave.Name : Draft.Recipe.Name.Trim();
+
+        if (!RecipeValidator.IsRecipeValid(toSave))
+        {
+            _saveAsVariantError = RecipeValidator.ValidateRecipe(toSave).FirstOrDefault() ?? "Cannot save this variant.";
+            return;
+        }
+
+        _isSavingAsVariant = true;
+        try
+        {
+            var result = await RecipeRepository.SaveAsync(toSave);
+            if (!result.Success)
+            {
+                _saveAsVariantError = result.Message;
+                return;
+            }
+
+            CancelSaveAsVariant();
+            _bypassNavigationGuard = true;
+            Navigation.NavigateTo($"/recipe/{toSave.Id}");
+        }
+        finally
+        {
+            _isSavingAsVariant = false;
+        }
     }
 
     private void OnMealTypeChanged(ChangeEventArgs e)
@@ -531,20 +951,32 @@ else
         ShowSaveModal("Saved", "Recipe saved successfully.", isError: false);
     }
 
-    private void AskDelete()
+    private void AskDelete(RecipeDto recipe)
     {
-        var name = string.IsNullOrWhiteSpace(Draft.Recipe.Name)
-            ? "this recipe"
-            : Draft.Recipe.Name.Trim();
-        _deleteMessage = $"“{name}” has data. Delete it? This cannot be undone.";
+        _pendingDeleteId = recipe.Id;
+        if (_familyMembers.Count > 1)
+        {
+            _deleteTitle = "Delete this variant?";
+            _deleteMessage = $"“{recipe.DisplayTitle()}” will be deleted. Other variants of this recipe stay.";
+        }
+        else
+        {
+            _deleteTitle = "Delete this recipe?";
+            _deleteMessage = $"“{recipe.DisplayTitle()}” has data. Delete it? This cannot be undone.";
+        }
+
         _showDeleteModal = true;
     }
 
-    private void CancelDelete() => _showDeleteModal = false;
+    private void CancelDelete()
+    {
+        _showDeleteModal = false;
+        _pendingDeleteId = null;
+    }
 
     private async Task ConfirmDeleteAsync()
     {
-        if (RecipeId is not Guid id)
+        if (_pendingDeleteId is not Guid id)
         {
             _showDeleteModal = false;
             return;
@@ -552,14 +984,26 @@ else
 
         _showDeleteModal = false;
         _isDeleting = true;
+        var deletingCurrent = Draft.Recipe.Id == id;
 
         try
         {
+            var familyId = RecipeScaler.FamilyKey(Draft.Recipe);
             await RecipeRepository.DeleteAsync(id);
+            var remaining = await RecipeRepository.GetByFamilyIdAsync(familyId);
+
+            if (!deletingCurrent)
+            {
+                _familyMembers = remaining;
+                _pendingDeleteId = null;
+                return;
+            }
+
+            _pendingDeleteId = null;
             _bypassNavigationGuard = true;
             Draft.MarkClean();
             await SyncBeforeUnloadAsync();
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo(remaining.Count == 0 ? "/" : $"/recipe/{remaining[0].Id}");
         }
         finally
         {
@@ -626,4 +1070,145 @@ else
 
     private static string FormatFactor(decimal value) =>
         decimal.Round(value, 2, MidpointRounding.AwayFromZero).ToString("0.0#", CultureInfo.InvariantCulture);
+
+    private bool CanPreviewScale => _scalePortions is > 0 && _scaleSize is > 0;
+
+    private void OpenScale()
+    {
+        _scaleError = null;
+        _scaleSaveError = null;
+        _scalePreview = null;
+        _showScalePreview = false;
+        _scalePortions = Draft.PortionTargetKind == PortionTargetKind.Portions ? Draft.PortionTargetValue : null;
+        _scaleSize = null;
+        _scaleSizeKind = RecipeScaleSizeKind.GramsPerPortion;
+        _showScaleModal = true;
+    }
+
+    private void OnScalePortionsInput(ChangeEventArgs e) => _scalePortions = ParseOptionalDecimal(e.Value);
+
+    private void OnScaleSizeInput(ChangeEventArgs e) => _scaleSize = ParseOptionalDecimal(e.Value);
+
+    private void ScaleForProfile()
+    {
+        if (MealTargetKcal is not decimal kcal)
+        {
+            return;
+        }
+
+        _scaleSizeKind = RecipeScaleSizeKind.CaloriesPerPortion;
+        _scaleSize = kcal;
+        if (_scalePortions is not > 0)
+        {
+            _scalePortions = 1;
+        }
+    }
+
+    private void PreviewScale()
+    {
+        if (_scalePortions is not > 0 || _scaleSize is not > 0)
+        {
+            return;
+        }
+
+        var result = RecipeScaler.Scale(Draft.Recipe, _scalePortions.Value, _scaleSizeKind, _scaleSize.Value);
+        if (!result.Success)
+        {
+            _scaleError = result.Error;
+            return;
+        }
+
+        _scaleError = null;
+        _scaleSaveError = null;
+        _scalePreview = result;
+        var baseName = string.IsNullOrWhiteSpace(Draft.Recipe.Name) ? "Recipe" : Draft.Recipe.Name.Trim();
+        _scaleSaveName = $"{baseName} (scaled)";
+        _showScaleModal = false;
+        _showScalePreview = true;
+    }
+
+    private void CancelScale()
+    {
+        _showScaleModal = false;
+        _showScalePreview = false;
+        _scalePreview = null;
+        _scaleError = null;
+        _scaleSaveError = null;
+    }
+
+    private async Task SaveScaleAsNewAsync()
+    {
+        if (_scalePreview?.Recipe is null)
+        {
+            return;
+        }
+
+        var name = string.IsNullOrWhiteSpace(_scaleSaveName)
+            ? $"{Draft.Recipe.Name.Trim()} (scaled)"
+            : _scaleSaveName.Trim();
+        var toSave = RecipeScaler.AsNewRecipe(_scalePreview.Recipe, name);
+        await PersistScaledAsync(toSave);
+    }
+
+    private async Task SaveScaleAsVariantAsync()
+    {
+        if (_scalePreview?.Recipe is null)
+        {
+            return;
+        }
+
+        if (RecipeDto.IsUnnamedVariant(_scaleSaveName))
+        {
+            _scaleSaveError = "Add a name other than Default for this variant.";
+            return;
+        }
+
+        var familyId = RecipeScaler.FamilyKey(Draft.Recipe);
+        var toSave = RecipeScaler.AsVariant(_scalePreview.Recipe, familyId, _scaleSaveName);
+        toSave.Name = string.IsNullOrWhiteSpace(Draft.Recipe.Name) ? toSave.Name : Draft.Recipe.Name.Trim();
+        await PersistScaledAsync(toSave);
+    }
+
+    private async Task PersistScaledAsync(RecipeDto toSave)
+    {
+        if (!RecipeValidator.IsRecipeValid(toSave))
+        {
+            _scaleSaveError = RecipeValidator.ValidateRecipe(toSave).FirstOrDefault() ?? "Cannot save this scaled recipe.";
+            return;
+        }
+
+        _isSavingScale = true;
+        try
+        {
+            var result = await RecipeRepository.SaveAsync(toSave);
+            if (!result.Success)
+            {
+                _scaleSaveError = result.Message;
+                return;
+            }
+
+            CancelScale();
+            _bypassNavigationGuard = true;
+            Navigation.NavigateTo($"/recipe/{toSave.Id}");
+        }
+        finally
+        {
+            _isSavingScale = false;
+        }
+    }
+
+    private static string FormatOptionalDecimal(decimal? value) => NumberFormat.Format(value);
+
+    private static decimal? ParseOptionalDecimal(object? value)
+    {
+        var text = value?.ToString();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        return decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
+    }
 }

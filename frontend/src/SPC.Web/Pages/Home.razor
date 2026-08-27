@@ -1,7 +1,6 @@
 @page "/"
 @using SPC.Core.Models
 @using SPC.Core.Repositories
-@using SPC.Core.Validation
 @inject IRecipeRepository RecipeRepository
 
 <PageTitle>Smart Pig's Cookbook</PageTitle>
@@ -25,7 +24,7 @@
 
 <section class="card saved-recipes-card">
     <h2 class="section-title">Saved recipes</h2>
-    <p class="section-hint muted">Open a recipe to keep editing, or delete one you no longer need.</p>
+    <p class="section-hint muted">Open a recipe to keep editing, or delete one you no longer need. Variants live on the recipe, not in this list.</p>
 
     @if (_isLoading)
     {
@@ -74,29 +73,12 @@
         else
         {
             <ul class="saved-recipe-list">
-                @foreach (var recipe in _page.Items)
+                @foreach (var family in _page.Items)
                 {
-                    <li class="saved-recipe-row">
-                        <a class="saved-recipe-link" href="@($"recipe/{recipe.Id}")">
-                            <span class="saved-recipe-name">@recipe.Name</span>
-                            <span class="saved-recipe-meta">
-                                @MealTypes.DisplayName(recipe.MealType)
-                                · @recipe.Ingredients.Count ingredients
-                                @if (recipe.Spices.Any(RecipeValidator.IsSpiceRowTouched))
-                                {
-                                    <text> · @recipe.Spices.Count(RecipeValidator.IsSpiceRowTouched) spices</text>
-                                }
-                                @if (recipe.UpdatedAt is not null)
-                                {
-                                    <text> · @recipe.UpdatedAt.Value.ToLocalTime().ToString("g")</text>
-                                }
-                            </span>
-                        </a>
-                        <button type="button"
-                                class="btn btn-secondary"
-                                @onclick="() => AskDelete(recipe)">
-                            Delete
-                        </button>
+                    <li class="saved-recipe-family">
+                        <SavedRecipeRow Recipe="family.Primary"
+                                        VariantCount="family.Variants.Count"
+                                        OnDelete="@(() => AskDelete(family))" />
                     </li>
                 }
             </ul>
@@ -114,14 +96,14 @@
 </section>
 
 @code {
-    private PagedResult<RecipeDto> _page = Paging.Slice(Array.Empty<RecipeDto>(), 1, Paging.DefaultPageSize);
+    private PagedResult<RecipeFamilyGroup> _page = Paging.Slice(Array.Empty<RecipeFamilyGroup>(), 1, Paging.DefaultPageSize);
     private int _pageSize = Paging.DefaultPageSize;
     private int _requestedPage = 1;
     private MealType? _mealFilter;
     private string _nameQuery = string.Empty;
     private bool _isLoading = true;
     private bool _showDeleteModal;
-    private Guid? _pendingDeleteId;
+    private Guid? _pendingDeleteFamilyId;
     private string _deleteMessage = string.Empty;
 
     private string MealFilterValue => _mealFilter?.ToString() ?? string.Empty;
@@ -179,30 +161,32 @@
         await LoadPageAsync();
     }
 
-    private void AskDelete(RecipeDto recipe)
+    private void AskDelete(RecipeFamilyGroup family)
     {
-        _pendingDeleteId = recipe.Id;
-        var name = string.IsNullOrWhiteSpace(recipe.Name) ? "this recipe" : recipe.Name.Trim();
-        _deleteMessage = $"“{name}” has data. Delete it? This cannot be undone.";
+        _pendingDeleteFamilyId = family.FamilyId;
+        var name = string.IsNullOrWhiteSpace(family.Primary.Name) ? "Untitled recipe" : family.Primary.Name.Trim();
+        _deleteMessage = family.Variants.Count == 0
+            ? $"“{name}” has data. Delete it? This cannot be undone."
+            : $"“{name}” has {family.Variants.Count} {(family.Variants.Count == 1 ? "variant" : "variants")}. Delete the recipe and all variants? This cannot be undone.";
         _showDeleteModal = true;
     }
 
     private void CancelDelete()
     {
         _showDeleteModal = false;
-        _pendingDeleteId = null;
+        _pendingDeleteFamilyId = null;
     }
 
     private async Task ConfirmDeleteAsync()
     {
         _showDeleteModal = false;
-        if (_pendingDeleteId is not Guid id)
+        if (_pendingDeleteFamilyId is not Guid familyId)
         {
             return;
         }
 
-        _pendingDeleteId = null;
-        await RecipeRepository.DeleteAsync(id);
+        _pendingDeleteFamilyId = null;
+        await RecipeRepository.DeleteFamilyAsync(familyId);
         await LoadPageAsync();
     }
 }

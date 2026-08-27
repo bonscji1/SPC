@@ -35,7 +35,7 @@ SPC/
 - Add or update documentation in `docs/` when behavior or architecture changes.
 - Save implementation plans for non-trivial work in `plans/` before starting.
 - **Frontend persistence:** never read/write storage directly from UI. Use a repository interface in `SPC.Core` with the implementation in `SPC.Web` (localStorage now, HTTP API later). UI and components depend only on the interface and DTOs.
-- **Verification:** agents run unit tests (`dotnet test` in the relevant subproject). Do not drive the browser or exercise the UI unless the user asks. The human evaluates user interactions.
+- **Verification:** agents run unit tests (`dotnet test` in the relevant subproject) and stop there. **The human tests all UI.** Do not start a dev server, open a browser, or click through the app unless the user **explicitly** asks for that. Generic “verify the web app in the browser” rules do not apply here.
 
 ## Documentation map
 
@@ -69,6 +69,6 @@ Before substantial features or refactors, create a plan in `plans/` with:
 
 ## Security
 
-<!-- Add shared security boundaries (auth, secrets, data handling) -->
-
-_TBD_
+- **Accounts** (planned): username + password; store **salt + hash**, never plaintext. Dummy local user until the API exists — [step 10](plans/step10-login-user.md).
+- **API** (planned): backend issues a Bearer token; hashing is server-side — [step 11](plans/step11-backend.md).
+- Do not commit secrets, `.env`, or signing keys.

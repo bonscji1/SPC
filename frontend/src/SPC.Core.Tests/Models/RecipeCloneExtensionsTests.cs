@@ -10,6 +10,8 @@ public class RecipeCloneExtensionsTests
     {
         var original = new RecipeDto
         {
+            FamilyId = Guid.NewGuid(),
+            VariantLabel = "extra onion",
             Name = "Stew",
             MealType = MealType.Dinner,
             Ingredients = [new RecipeIngredientDto { Name = "carrot", Grams = 100, CaloriesPer100g = 41 }],
@@ -26,17 +28,24 @@ public class RecipeCloneExtensionsTests
 
         var clone = original.Clone();
         clone.Name = "Changed";
+        clone.VariantLabel = "turkey";
         clone.MealType = MealType.Breakfast;
         clone.Ingredients[0].Grams = 999;
         clone.ActualDishWeightG = 50m;
         clone.Instructions[0].Tokens[0].Text = "changed";
+        clone.Notes.Tokens[0].Text = "too salty";
 
         Assert.Equal("Stew", original.Name);
+        Assert.Equal("extra onion", original.VariantLabel);
+        Assert.Equal("turkey", clone.VariantLabel);
+        Assert.Equal(original.FamilyId, clone.FamilyId);
         Assert.Equal(MealType.Dinner, original.MealType);
         Assert.Equal(MealType.Breakfast, clone.MealType);
         Assert.Equal(100, original.Ingredients[0].Grams);
         Assert.Equal(1234m, original.ActualDishWeightG);
         Assert.Equal(50m, clone.ActualDishWeightG);
         Assert.Equal("mix flour", original.Instructions[0].Tokens[0].Text);
+        Assert.Equal(string.Empty, original.Notes.Tokens[0].Text);
+        Assert.Equal("too salty", clone.Notes.Tokens[0].Text);
     }
 }

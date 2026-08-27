@@ -3,8 +3,11 @@
 @inject IJSRuntime Js
 @implements IAsyncDisposable
 
-<div class="instruction-step">
-    <span class="instruction-step-num">@StepNumber</span>
+<div class="instruction-step @(IsSolo ? "instruction-step-solo" : null)">
+    @if (ShowNumber)
+    {
+        <span class="instruction-step-num">@StepNumber</span>
+    }
 
     <div class="instruction-step-main">
         <div class="editor-toolbar" @ref="_toolbar">
@@ -16,12 +19,15 @@
         <div @ref="_host" class="rich-editor-host"></div>
     </div>
 
-    <button type="button"
-            class="btn btn-icon"
-            title="Remove step"
-            @onclick="AskRemoveAsync">
-        ✕
-    </button>
+    @if (CanRemove)
+    {
+        <button type="button"
+                class="btn btn-icon"
+                title="Remove step"
+                @onclick="AskRemoveAsync">
+            ✕
+        </button>
+    }
 </div>
 
 <AppModal IsOpen="_confirmOpen"
@@ -39,6 +45,8 @@
     private string? _editorId;
     private DotNetObjectReference<InstructionStepEditor>? _dotnetRef;
     private bool _initialized;
+    private bool _initInFlight;
+    private bool _disposed;
     private string _mentionSignature = string.Empty;
 
     [Parameter, EditorRequired]
@@ -51,6 +59,12 @@
     public int StepNumber { get; set; } = 1;
 
     [Parameter]
+    public bool ShowNumber { get; set; } = true;
+
+    [Parameter]
+    public bool CanRemove { get; set; } = true;
+
+    [Parameter]
     public EventCallback OnChanged { get; set; }
 
     [Parameter]
@@ -58,12 +72,40 @@
 
     private bool _confirmOpen;
 
+    private bool IsSolo => !ShowNumber && !CanRemove;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await Js.InvokeVoidAsync("spc.loadInstructionEditor");
+        if (_disposed)
+        {
+            return;
+        }
 
         if (!_initialized)
         {
+            await TryInitEditorAsync();
+            return;
+        }
+
+        await UpdateMentionsIfNeededAsync();
+    }
+
+    private async Task TryInitEditorAsync()
+    {
+        if (_initInFlight || _initialized || _disposed || string.IsNullOrEmpty(_host.Id))
+        {
+            return;
+        }
+
+        _initInFlight = true;
+        try
+        {
+            await Js.InvokeVoidAsync("spc.loadInstructionEditor");
+            if (_disposed || string.IsNullOrEmpty(_host.Id))
+            {
+                return;
+            }
+
             _dotnetRef = DotNetObjectReference.Create(this);
             var content = InstructionEditor.SerializeStepToTiptap(Step, Recipe);
             var mentions = InstructionEditor.MentionItemsForRecipe(Recipe);
@@ -75,11 +117,38 @@
                 content,
                 mentions,
                 _dotnetRef);
-            _initialized = true;
-            return;
-        }
 
-        if (_editorId is null)
+            if (_disposed)
+            {
+                if (_editorId is not null)
+                {
+                    await Js.InvokeVoidAsync("spcInstructionEditor.destroy", _editorId);
+                    _editorId = null;
+                }
+
+                return;
+            }
+
+            _initialized = true;
+        }
+        catch (JSException)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            throw;
+        }
+        finally
+        {
+            _initInFlight = false;
+        }
+    }
+
+    private async Task UpdateMentionsIfNeededAsync()
+    {
+        if (_disposed || _editorId is null)
         {
             return;
         }
@@ -121,9 +190,17 @@
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+
         if (_editorId is not null)
         {
-            await Js.InvokeVoidAsync("spcInstructionEditor.destroy", _editorId);
+            try
+            {
+                await Js.InvokeVoidAsync("spcInstructionEditor.destroy", _editorId);
+            }
+            catch (JSException)
+            {
+            }
         }
 
         _dotnetRef?.Dispose();

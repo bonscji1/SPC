@@ -104,6 +104,10 @@ function bindToolbar(toolbar, editor) {
 }
 
 export function initStepEditor(host, toolbar, content, mentionItems, dotnetRef) {
+  if (!host) {
+    return null;
+  }
+
   const state = {
     mentionItems: mentionItems ?? [],
     dotnetRef,

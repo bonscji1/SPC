@@ -66,6 +66,26 @@ public class RecipeEquivalenceTests
         Assert.False(RecipeEquivalence.AreEquivalent(left, right));
     }
 
+    [Fact]
+    public void AreEquivalent_ReturnsFalse_WhenVariantLabelDiffers()
+    {
+        var left = CreateSample();
+        var right = left.Clone();
+        right.VariantLabel = "turkey";
+
+        Assert.False(RecipeEquivalence.AreEquivalent(left, right));
+    }
+
+    [Fact]
+    public void AreEquivalent_ReturnsFalse_WhenNotesDiffer()
+    {
+        var left = CreateSample();
+        var right = left.Clone();
+        right.Notes.Tokens[0].Text = "needs more salt";
+
+        Assert.False(RecipeEquivalence.AreEquivalent(left, right));
+    }
+
     private static RecipeDto CreateSample() => new()
     {
         Name = "Stew",

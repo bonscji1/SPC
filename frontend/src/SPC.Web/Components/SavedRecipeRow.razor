@@ -1,0 +1,40 @@
+@using SPC.Core.Models
+@using SPC.Core.Validation
+
+<div class="saved-recipe-row">
+    <a class="saved-recipe-link" href="@($"recipe/{Recipe.Id}")">
+        <span class="saved-recipe-name">@Recipe.Name</span>
+        <span class="saved-recipe-meta">
+            @MealTypes.DisplayName(Recipe.MealType)
+            · @Recipe.Ingredients.Count ingredients
+            @if (Recipe.Spices.Any(RecipeValidator.IsSpiceRowTouched))
+            {
+                <text> · @Recipe.Spices.Count(RecipeValidator.IsSpiceRowTouched) spices</text>
+            }
+            @if (VariantCount > 0)
+            {
+                <text> · @VariantCount @(VariantCount == 1 ? "variant" : "variants")</text>
+            }
+            @if (Recipe.UpdatedAt is not null)
+            {
+                <text> · @Recipe.UpdatedAt.Value.ToLocalTime().ToString("g")</text>
+            }
+        </span>
+    </a>
+    <button type="button"
+            class="btn btn-secondary"
+            @onclick="() => OnDelete.InvokeAsync()">
+        Delete
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RecipeDto Recipe { get; set; } = null!;
+
+    [Parameter]
+    public int VariantCount { get; set; }
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+}

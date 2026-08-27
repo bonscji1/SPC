@@ -27,6 +27,7 @@ public sealed class RecipeDraftService
     public void NewRecipe()
     {
         Recipe = new RecipeDto();
+        Recipe.FamilyId = Recipe.Id;
         ResetPortionSession();
     }
 
@@ -37,6 +38,13 @@ public sealed class RecipeDraftService
     }
 
     public void MarkClean() => _baseline = Recipe.Clone();
+
+    public void ApplyPersistedVariantLabel(string label)
+    {
+        var normalized = RecipeDto.NormalizeVariantLabel(label);
+        Recipe.VariantLabel = normalized;
+        _baseline.VariantLabel = normalized;
+    }
 
     public void AddIngredient() => Recipe.Ingredients.Add(new RecipeIngredientDto());
 

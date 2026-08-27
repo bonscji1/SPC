@@ -18,6 +18,10 @@ Saved with the recipe in localStorage (`spc.recipes.v1`). Each step stores TipTa
 
 Instructions are **not** shown in the recipe summary panel (by design).
 
+## Notes
+
+A second full-width card under Instructions. One editor for what you think about **this variant** (`RecipeDto.Notes`). Same TipTap + `#` chips as a step; no step number, no add, no remove. Empty notes are fine. Switching variant tabs loads that row’s notes.
+
 ## Rebuild JS
 
 After editing `wwwroot/js/instruction-editor/`: `npm run build:instruction-editor` in `frontend/`.

@@ -19,4 +19,4 @@ Stack selection should follow application design. These are candidate options on
 
 ## Next step
 
-Finalize application design first, then evaluate which combination best fits requirements, team skills, and operational needs.
+Backend language and database are **not** chosen here. When we implement [step 11](./step11-backend.md), discuss which store and schema fit per-user recipes and libraries (shared DB, isolated rows) before scaffolding. Frontend is Blazor WASM (.NET 10), already in use.

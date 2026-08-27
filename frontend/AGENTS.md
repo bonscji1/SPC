@@ -56,7 +56,7 @@ frontend/
 - Tests target `SPC.Core` first; add UI tests only when valuable
 - Display quantities with `NumberFormat` (whole numbers bare; otherwise exactly two decimals). See `docs/architecture.md`
 - **UI:** follow `docs/ui.md` (type scale, InfoTip) and **Product preferences** in `docs/architecture.md` (sections, visible caveats). Do not invent new font sizes.
-- **Verification:** agents run `dotnet test SPC.sln` only. Do **not** start the dev server, open a browser, or click through the UI unless the user explicitly asks. The human evaluates user interactions.
+- **Verification:** agents run `dotnet test SPC.sln` only. **The human tests UI functionality.** Do **not** start the dev server, open a browser, take screenshots, or click through the UI unless the user **explicitly** asks. Do not treat UI work as requiring browser verification by default.
 
 ## Documentation
 
@@ -69,4 +69,4 @@ frontend/
 | Future improvements | `docs/future-improvements.md` |
 | Recipe instructions | `docs/recipe-instructions.md` |
 | Shared docs | `../docs/README.md` |
-| Implementation plans | `../plans/thePlan.md` |
+| Implementation plans | `../plans/thePlan.md` (login: step 10; backend: step 11) |

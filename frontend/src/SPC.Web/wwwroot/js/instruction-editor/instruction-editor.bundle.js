@@ -18999,6 +18999,9 @@ img.ProseMirror-separator {
     });
   }
   function initStepEditor(host, toolbar, content, mentionItems, dotnetRef) {
+    if (!host) {
+      return null;
+    }
     const state = {
       mentionItems: mentionItems ?? [],
       dotnetRef

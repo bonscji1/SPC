@@ -1,7 +1,7 @@
 @if (IsOpen)
 {
     <div class="modal-backdrop" @onclick="HandleBackdropClick">
-        <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="@_titleId" @onclick:stopPropagation="true">
+        <div class="modal card @(Wide ? "modal-wide" : null)" role="dialog" aria-modal="true" aria-labelledby="@_titleId" @onclick:stopPropagation="true">
             <h2 id="@_titleId" class="modal-title">@Title</h2>
             @if (!string.IsNullOrEmpty(Message))
             {
@@ -15,15 +15,25 @@
             }
 
             <div class="modal-actions">
-                @if (ShowCancel)
+                @if (Actions is not null)
                 {
-                    <button type="button" class="btn btn-secondary" @onclick="CancelAsync">
-                        @CancelText
-                    </button>
+                    @Actions
                 }
-                <button type="button" class="btn @ConfirmButtonClass" disabled="@ConfirmDisabled" @onclick="ConfirmAsync">
-                    @ConfirmText
-                </button>
+                else
+                {
+                    @if (ShowCancel)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CancelAsync">
+                            @CancelText
+                        </button>
+                    }
+                    @if (ShowConfirm)
+                    {
+                        <button type="button" class="btn @ConfirmButtonClass" disabled="@ConfirmDisabled" @onclick="ConfirmAsync">
+                            @ConfirmText
+                        </button>
+                    }
+                }
             </div>
         </div>
     </div>
@@ -51,6 +61,12 @@
     public bool ShowCancel { get; set; }
 
     [Parameter]
+    public bool ShowConfirm { get; set; } = true;
+
+    [Parameter]
+    public bool Wide { get; set; }
+
+    [Parameter]
     public bool IsError { get; set; }
 
     [Parameter]
@@ -58,6 +74,9 @@
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? Actions { get; set; }
 
     [Parameter]
     public EventCallback OnConfirm { get; set; }
@@ -73,11 +92,11 @@
 
     private async Task HandleBackdropClick()
     {
-        if (ShowCancel)
+        if (ShowCancel || Actions is not null)
         {
             await CancelAsync();
         }
-        else
+        else if (ShowConfirm)
         {
             await ConfirmAsync();
         }

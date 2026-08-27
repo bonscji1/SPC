@@ -37,7 +37,9 @@ src/SPC.Web/
 | Recipe being edited | `RecipeDraftService` | Singleton (in-memory) |
 | Portion inputs (kcal/portion or count) | `RecipeDraftService` | Session-only; not saved with the recipe |
 | Actual cooked weight | `RecipeDto.ActualDishWeightG` | Saved with the recipe |
-| Saved recipes | `IRecipeRepository` → `LocalStorageRecipeRepository` | Browser localStorage (`spc.recipes.v1`); home list via `GetPageAsync` (10 / 25 / 50, newest first, optional name contains + meal-type filters) |
+| Recipe family / variant | `RecipeDto.FamilyId`, `VariantLabel` | Variations of one dish. Home lists **one row per family**. Empty label displays as **Default**; switch variants on the recipe editor tabs |
+| Recipe notes | `RecipeDto.Notes` | One rich-text block per variant (same editor as an instruction step; no number or add/remove) |
+| Saved recipes | `IRecipeRepository` → `LocalStorageRecipeRepository` | Browser localStorage (`spc.recipes.v1`); home list via `GetPageAsync` (10 / 25 / 50, newest family first, name or variant-label contains + meal-type filters) |
 | Ingredient library | `IIngredientRepository` → `LocalStorageIngredientRepository` | Browser localStorage (`spc.ingredients.v1`); copy-on-use for recipe/spice rows; admin page `/library` |
 | Person profiles | `IUserProfileRepository` → `LocalStorageUserProfileRepository` | Browser localStorage (`spc.profiles.v1`) |
 | Selected profile | `ActiveProfileService` | Session + `spc.activeProfileId.v1`; not stored on recipes |
@@ -47,9 +49,13 @@ src/SPC.Web/
 
 `RecipeDraftService` holds the current edit. **Save** writes through `IRecipeRepository` (not directly to localStorage).
 
+### Identity vs calorie profile (planned — step 10)
+
+A **login account** (username + password, session bearer token) is not `UserProfileDto`. Profiles stay the household bodies used for energy targets. After step 10, recipes, the ingredient library, and profiles are scoped to the signed-in account. Until the backend exists, one dummy default user is seeded; see [plans/step10-login-user.md](../../plans/step10-login-user.md).
+
 ### Unsaved changes
 
-A **baseline snapshot** (`RecipeDto` clone) is stored when the recipe is loaded, created, or saved. `HasUnsavedChanges` compares the current draft to that baseline via `RecipeEquivalence` in Core (name, meal type, ingredients, spices, instruction steps, actual cooked weight — not `UpdatedAt` or ids).
+A **baseline snapshot** (`RecipeDto` clone) is stored when the recipe is loaded, created, or saved. `HasUnsavedChanges` compares the current draft to that baseline via `RecipeEquivalence` in Core (name, family id, variant label, meal type, ingredients, spices, instruction steps, notes, actual cooked weight — not `UpdatedAt` or recipe id).
 
 Guards when dirty:
 
@@ -61,12 +67,12 @@ Guards when dirty:
 `localStorage` is the prototype store. It is not the long-term store (quota, one browser, no sharing). Plan: `plans/step5-save-recipes-and-ingredients.md`.
 
 ```
-UI → IRecipeRepository.GetPageAsync / Save / Delete
-        → LocalStorageRecipeRepository → IBrowserLocalStorage   (now)
-        → ApiRecipeRepository          → HTTP + PostgreSQL      (real app)
+UI → IRecipeRepository.GetPageAsync / GetByFamilyIdAsync / Save / Delete / DeleteFamilyAsync
+        → LocalStorageRecipeRepository → IBrowserLocalStorage   (now; per-account keys after step 10)
+        → ApiRecipeRepository          → HTTP + Bearer + DB     (step 11)
 ```
 
-Swap the DI registration in `Program.cs` to move to the backend. DTOs and UI stay unchanged.
+Swap the DI registration in `Program.cs` to move to the backend. DTOs and UI stay unchanged. Database choice is a step 11 discussion, not a frontend decision.
 
 - **Recipe line:** `RecipeIngredientDto` (name, grams used, kcal/100 g)
 - **Nutrition library:** `IngredientDto` (canonical name, kcal/100 g) in `spc.ingredients.v1`. Shared by ingredient and spice rows. Copy-on-use: picking fills the row; saving a recipe adds new foods and may ask before changing library kcal. Existing recipes are not rewritten.
@@ -74,7 +80,7 @@ Swap the DI registration in `Program.cs` to move to the backend. DTOs and UI sta
 
 **Name picker.** Filter on each keystroke while the library is local (no debounce, no spinner). Omit library foods already used on other rows of the same list (ingredients vs spices). First match is highlighted so Enter selects. Tab/Escape dismisses without filling. **When search is remote** (HTTP `IIngredientRepository` or step 9 API): debounce **200–250 ms** and show a spinner only while a request is in flight. Do not ship that delay for in-memory/localStorage search.
 
-**Delete** a saved recipe from home (list row) or the editor (next to Save). Confirm when the recipe has data. Home and library lists filter by name above the rows (Home also has meal type). Per page / previous / next sit under the list. Page sizes are 10, 25, or 50 (`Paging.PageSizes`). New recipes still open `/recipe/new`.
+**Delete** a saved recipe from home (the whole family) or from a variant tab’s pen (that variant only). Confirm when the recipe has data. Home lists **one row per dish**; the name filter also matches variant labels so a family still appears. Open the recipe to switch variants (Excel-style tabs under **Edit recipe**, including a **Default** tab when the base row has no label). A pen on each tab opens a modal to rename that variant (empty or Default = base tab; names unique in the family) or delete it. The save panel is **Scale this for…**, **Save recipe**, then **Save as variant** (copy the current draft to a new tab; the open variant stays as last saved). Per page / previous / next sit under the list. Page sizes are 10, 25, or 50 (`Paging.PageSizes`) and count **families**. New recipes still open `/recipe/new`. **Scale this for…** can fill kcal from the selected profile’s meal split (same value as **Use as portion target**); the control is labeled **Scale for profile {name}**. Preview first, with one name field, then **Save as variant** or **Save as recipe**.
 
 **Library page** (`/library`). **Add ingredient** opens an `AppModal` with name + kcal; **Edit** on a row opens the same dialog for that food. Adding a name already in the library updates that food. Renaming onto another existing food is an error. Delete removes the library row only; recipes stay as they are. Name filter is a case-insensitive contains match. `SearchAsync` still caps the recipe-editor picker at 8.
 
@@ -102,8 +108,8 @@ Do **not** treat a one-off control as a global pattern. Activity options with ev
 
 ## Testing strategy
 
-- **Core:** unit tests for validators, calculators, mappers (primary focus). Agents run these.
-- **Web:** the human evaluates interactions in the browser. Agents do not drive the UI unless asked. Component tests only if complexity warrants.
+- **Core:** unit tests for validators, calculators, mappers (primary focus). Agents run these (`dotnet test`).
+- **Web / UI:** the human tests in the browser. Agents do not start the app or drive the UI unless **explicitly** asked. Component tests only if complexity warrants.
 
 ## Related
 
@@ -113,4 +119,6 @@ Do **not** treat a one-off control as a global pattern. Activity options with ev
 - Portion math: `portion-math.md`
 - Energy targets: `energy-targets.md`
 - Roadmap: `../../plans/thePlan.md`
+- Login accounts: `../../plans/step10-login-user.md`
+- Backend + database: `../../plans/step11-backend.md`
 - Agent rules: `../AGENTS.md`

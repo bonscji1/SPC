@@ -45,6 +45,17 @@ Do not repeat the fractional count. Show:
 
 When ingredient totals change, keep the last independent field and recompute the other two.
 
+## Batch scaling (step 8)
+
+The three knobs above **slice** the current batch. They do not change shopping-list grams.
+
+**Scale this for…** is a separate action: choose `N` portions and a portion size in **g or kcal**, then multiply every ingredient gram (and every weighed spice gram) by a factor from **theoretical** totals:
+
+- Grams: `scaleFactor = (N × gramsPerPortion) / theoreticalWeightG`
+- kcal: `scaleFactor = (N × kcalPerPortion) / theoreticalCalories`
+
+Each weighed line is rounded to two decimal places (same as display). Cooked weight is not scaled. **Scale for profile {name}** fills kcal per portion from that profile’s meal split (same number as **Use as portion target**); portion count `N` stays yours. The first result is a preview with one name field; then save as a new recipe or a **variant**.
+
 ## Pairing grams with kcal/100 g
 
 `caloriesPer100g` must describe the **same state** as the grams you typed. That is usually automatic.

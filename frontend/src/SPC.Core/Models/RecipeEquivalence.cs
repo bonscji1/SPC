@@ -10,8 +10,11 @@ public static class RecipeEquivalence
         ArgumentNullException.ThrowIfNull(right);
 
         if (!string.Equals(left.Name, right.Name, StringComparison.Ordinal)
+            || left.FamilyId != right.FamilyId
+            || !string.Equals(left.VariantLabel, right.VariantLabel, StringComparison.Ordinal)
             || left.MealType != right.MealType
-            || left.ActualDishWeightG != right.ActualDishWeightG)
+            || left.ActualDishWeightG != right.ActualDishWeightG
+            || !AreEquivalent(left.Notes, right.Notes))
         {
             return false;
         }
@@ -53,8 +56,10 @@ public static class RecipeEquivalence
         return true;
     }
 
-    private static bool AreEquivalent(InstructionStepDto left, InstructionStepDto right)
+    private static bool AreEquivalent(InstructionStepDto? left, InstructionStepDto? right)
     {
+        left ??= new InstructionStepDto();
+        right ??= new InstructionStepDto();
         if (!string.Equals(left.EditorJson, right.EditorJson, StringComparison.Ordinal))
         {
             return false;
